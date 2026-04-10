@@ -1,0 +1,15 @@
+# cases/cessna172/plots.toml
+# Cada [[figure]] abre uma janela separada.
+# "groups" lista as linhas de subplots — máximo 3 variáveis por linha.
+# Grupos disponíveis:
+#   Position, Velocity NED, Euler angles, Euler rates,
+#   Angular velocity, Aerodynamics, Body velocity
+
+[[figure]]
+groups = ["Position", "Velocity NED"]
+
+[[figure]]
+groups = ["Euler angles", "Euler rates", "Angular velocity"]
+
+[[figure]]
+groups = ["Aerodynamics", "Body velocity"]

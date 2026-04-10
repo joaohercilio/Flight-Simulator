@@ -1,1 +1,0 @@
-from .aerodynamicModel import aerodynamicForceWind, aerodynamicForceBody

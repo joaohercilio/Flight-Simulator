@@ -1,27 +1,28 @@
-from utilities import loadModel, loadInitialCondition, generatePlots
-from flightsym import runSimulation
+# main.py
+"""Entry point for the 6DOF flight simulator."""
+
+from config.cli import parse_args
+from utils.io import load_model, generate_plots
+from flightsim.core.simulation import run_simulation
 
 
-def main(model_file: str = None, initial_conditions_file: str) -> None:
-    if model_file is None:
-        model_file = "aircraftModel.dat"
+def main() -> None:
+    """Loads config, runs simulation, and generates plots."""
+    cfg = parse_args()
 
-    model = loadModel(model_file)
-    
-    x0 = loadInitialCondition(initial_conditions_file)
+    model = load_model(cfg.model_file)
+    model.report()
 
-    t0 = 0
-    tf = 10
-    dt = 0.01
+    t, x, dx = run_simulation(model, cfg.x0, cfg.t_start, cfg.t_end, cfg.dt)
 
-    t, x, dx = runSimulation(model, x0, t0, tf, dt)
-
-    generatePlots(t, x, dx)
+    generate_plots(
+        t, x, dx,
+        plot_config=cfg.plot_config,
+        output_dir=cfg.output_dir,
+        save_figures=cfg.save_figures,
+        show_gui=cfg.show_gui,
+    )
 
 
 if __name__ == "__main__":
-    # model_file = "aircraftModel.dat"
-    # initial_conditions_file = "initialCondition.dat"
-    # main()
-
-    t, x, dx = runSimulation(model, x0, t0, tf, dt)
+    main()

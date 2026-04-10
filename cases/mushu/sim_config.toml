@@ -1,0 +1,32 @@
+# sim_config.toml
+
+[simulation]
+t_start = 0.0
+t_end   = 10.0
+dt      = 0.01
+
+[model]
+file = "data/aircraft_model.dat"
+
+[initial_condition]
+# velocidade (m/s, eixo corpo)
+u = 50.0
+v = 0.0
+w = 0.0
+# atitude (rad)
+phi = 0.0
+theta = 0.02
+psi  = 0.0
+# posição NED (m)
+x = 0.0
+y = 0.0
+z = -1000.0
+# taxas angulares (rad/s)
+p = 0.0
+q = 0.0
+r = 0.0
+
+[plots]
+save_figures = true
+output_dir   = "results/"
+show_gui     = true
