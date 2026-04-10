@@ -1,0 +1,19 @@
+# CG POSITION
+x0 = 0		
+y0 = 0
+z0 = -100
+
+# ATTITUDE
+phi0 = 0 	
+tet0 = 0
+psi0 = 0
+
+# VELOCITY RESOLVED ON BODY AXES
+u0 = 6.88
+v0 = 0
+w0 = 1.26
+
+# ANGULAR VELOCITY
+p0 = 0 	 
+q0 = 0
+r0 = 0

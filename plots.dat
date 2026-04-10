@@ -1,0 +1,18 @@
+# AVAILABLE PLOTS
+# Position
+# Velocity NED
+# Angular velocity
+# Euler angles
+# Euler rates
+# Aerodynamics
+
+PLOT
+Position          
+Velocity NED      
+
+PLOT
+Euler angles
+Euler rates
+
+PLOT
+Aerodynamics
