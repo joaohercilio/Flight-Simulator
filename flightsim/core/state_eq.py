@@ -15,13 +15,21 @@ from flightsim.core.equations import (
 )
 from flightsim.aero.forces import aerodynamic_force_wind, aerodynamic_force_body
 from flightsim.atmosphere.model import AtmosphereModel
+from flightsim.aero.database import AeroDatabase
+from utils.io import AircraftModel
 
 
-def make_state_eq(model: AircraftModel, aero_db: AeroDatabase, control_input, atmosphere: AtmosphereModel):
+def make_state_eq(
+    model: AircraftModel,
+    aero_db: AeroDatabase,
+    control_input,
+    atmosphere: AtmosphereModel,
+):
     """Builds the RHS of the 6DOF state equation dx/dt = f(x, t).
 
     Args:
-        model: Aircraft model dict with keys: mass, Ix, Iy, Iz, Ixz, b, c, S.
+        model: Aircraft model dataclass with inertia and geometry.
+        aero_db: Aerodynamic coefficient database.
         control_input: Callable returning
             (ele_cmd, ail_cmd, rud_cmd, throttle_cmd, brake_cmd).
         atmosphere: AtmosphereModel instance.
@@ -29,7 +37,10 @@ def make_state_eq(model: AircraftModel, aero_db: AeroDatabase, control_input, at
     Returns:
         Callable f(x, t) -> dx where x and dx are NDArray of shape (12,).
     """
-    arm_z_engine = -0.05  # distance from CG to thrust line (m), positive down
+
+    arm_z_engine = model.arm_z_engine
+    max_brake    = model.brake_max
+    bm           = 100.0 / max_brake**2
 
     def f(raw: NDArray, t: float) -> NDArray:
         s = StateVector(raw)
@@ -103,7 +114,7 @@ def make_state_eq(model: AircraftModel, aero_db: AeroDatabase, control_input, at
         )
 
         dx[StateIndex.U], dx[StateIndex.V], dx[StateIndex.W] = translational_equations(
-            model["mass"], g,
+            model.mass, g,
             fx, fy, fz,
             s.u, s.v, s.w,
             s.p, s.q, s.r,
@@ -111,7 +122,7 @@ def make_state_eq(model: AircraftModel, aero_db: AeroDatabase, control_input, at
         )
 
         dx[StateIndex.P], dx[StateIndex.Q], dx[StateIndex.R] = rotational_equations(
-            model["Ix"], model["Iy"], model["Iz"], model["Ixz"],
+            model.ix, model.iy, model.iz, model.ixz,
             roll_moment, pitch_moment, yaw_moment,
             s.p, s.q, s.r,
         )

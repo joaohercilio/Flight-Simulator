@@ -1,43 +1,32 @@
-# cases/cessna172/aircraft_model.toml
-# Aircraft model parameters for the Cessna 172.
-# All values in SI units unless noted otherwise.
+# cases/mushu/aircraft_model.toml
+# All values in SI units.
 
-# ---------------------------------------------------------
 # Inertia
-# ---------------------------------------------------------
 [inertia]
-mass = 1200.0   # kg       — total mass
-Ix   = 1285.0   # kg·m²   — roll moment of inertia
-Iy   = 1825.0   # kg·m²   — pitch moment of inertia
-Iz   = 2667.0   # kg·m²   — yaw moment of inertia
-Ixz  = 0.0      # kg·m²   — product of inertia (0 for symmetric aircraft)
+mass = 1200.0   # kg      — total mass
+Ix   = 1285.0   # kg.m^2  — roll moment of inertia
+Iy   = 1825.0   # kg.m^2  — pitch moment of inertia
+Iz   = 2667.0   # kg.m^2  — yaw moment of inertia
+Ixz  = 0.0      # kg.m^2  — product of inertia (0 for symmetric aircraft)
 
-# ---------------------------------------------------------
 # Wing geometry
-# ---------------------------------------------------------
 [geometry]
-S = 16.17   # m²   — wing reference area
-b = 10.91   # m    — wingspan
-c = 1.494   # m    — mean aerodynamic chord
+S = 16.17   # m^2   wing reference area
+b = 10.91   # m     wingspan
+c = 1.494   # m     mean aerodynamic chord
 
-# ---------------------------------------------------------
 # Propulsion
-# ---------------------------------------------------------
 [propulsion]
-arm_z_engine = -0.05   # m   — vertical distance from CG to thrust line
-                        #       negative = thrust line above CG
+arm_z_engine = -0.05   # m    vertical distance from CG to thrust line
+                        #     negative = thrust line above CG
 
-# ---------------------------------------------------------
 # Control surface deflection limits
-# ---------------------------------------------------------
 [control_limits]
 elevator_max = 10.0   # deg
 aileron_max  = 30.0   # deg
 rudder_max   = 10.0   # deg
 brake_max    = 200.0  # N
 
-# ---------------------------------------------------------
 # Aerodynamic tables
-# ---------------------------------------------------------
 [aero]
 tables_dir = "aero_tables"   # path relative to this file

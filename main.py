@@ -1,19 +1,28 @@
 # main.py
 """Entry point for the 6DOF flight simulator."""
 
-from config.cli import parse_args
+import pathlib
+
+from config.settings import SimConfig
 from utils.io import load_model, generate_plots
 from flightsim.core.simulation import run_simulation
+from flightsim.aero.database import AeroDatabase
+
+CASE_DIR = pathlib.Path("cases/mushu")
 
 
 def main() -> None:
     """Loads config, runs simulation, and generates plots."""
-    cfg = parse_args()
+    cfg = SimConfig.from_toml_file(CASE_DIR / "sim_config.toml")
 
-    model = load_model(cfg.model_file)
+    model = load_model(CASE_DIR / "aircraft_model.toml")
     model.report()
 
-    t, x, dx = run_simulation(model, cfg.x0, cfg.t_start, cfg.t_end, cfg.dt)
+    t, x, dx = run_simulation(
+        model, cfg.x0,
+        cfg.t_start, cfg.t_end, cfg.dt,
+        atmosphere=cfg.atmosphere
+    )
 
     generate_plots(
         t, x, dx,

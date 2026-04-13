@@ -8,7 +8,10 @@ import pathlib
 import tomllib
 
 import numpy as np
+import matplotlib.pyplot as plt
+from numpy.typing import NDArray
 
+from flightsim.core.state import StateIndex
 
 @dataclasses.dataclass(frozen=True)
 class AircraftModel:
@@ -26,31 +29,42 @@ class AircraftModel:
         aero_tables_dir: Path to aerodynamic coefficient tables.
     """
 
-    mass: float
-    Ix: float
-    Iy: float
-    Iz: float
-    Ixz: float
-    s: float
-    b: float
-    c: float
+    mass:          float
+    ix:            float
+    iy:            float
+    iz:            float
+    ixz:           float
+    s:             float
+    b:             float
+    c:             float
+    arm_z_engine:  float
+    elevator_max:  float
+    aileron_max:   float
+    rudder_max:    float
+    brake_max:     float
     aero_tables_dir: pathlib.Path
 
     def report(self) -> None:
         """Prints a summary of the aircraft model parameters."""
         print("--- inertia ---")
         print(f"  mass : {self.mass} kg")
-        print(f"  Ix   : {self.Ix} kg·m²")
-        print(f"  Iy   : {self.Iy} kg·m²")
-        print(f"  Iz   : {self.Iz} kg·m²")
-        print(f"  Ixz  : {self.Ixz} kg·m²")
+        print(f"  Ix   : {self.ix} kg·m²")
+        print(f"  Iy   : {self.iy} kg·m²")
+        print(f"  Iz   : {self.iz} kg·m²")
+        print(f"  Ixz  : {self.ixz} kg·m²")
         print("--- geometry ---")
         print(f"  S    : {self.s} m²")
         print(f"  b    : {self.b} m")
         print(f"  c    : {self.c} m")
-        print(f"--- aero tables ---")
+        print("--- propulsion ---")
+        print(f"  arm_z_engine : {self.arm_z_engine} m")
+        print("--- control limits ---")
+        print(f"  elevator : ±{self.elevator_max} deg")
+        print(f"  aileron  : ±{self.aileron_max} deg")
+        print(f"  rudder   : ±{self.rudder_max} deg")
+        print(f"  brake    : {self.brake_max} N")
+        print("--- aero tables ---")
         print(f"  dir  : {self.aero_tables_dir}")
-
 
 def load_model(model_file: pathlib.Path) -> AircraftModel:
     """Loads an aircraft model from a TOML file.
@@ -71,23 +85,28 @@ def load_model(model_file: pathlib.Path) -> AircraftModel:
     with open(model_file, "rb") as f:
         data = tomllib.load(f)
 
-    inertia  = data["inertia"]
-    geometry = data["geometry"]
-
+    inertia    = data["inertia"]
+    geometry   = data["geometry"]
+    propulsion = data.get("propulsion", {})
+    control    = data.get("control_limits", {})
     tables_dir = model_file.parent / data["aero"]["tables_dir"]
 
     return AircraftModel(
         mass=inertia["mass"],
-        Ix=inertia["Ix"],
-        Iy=inertia["Iy"],
-        Iz=inertia["Iz"],
-        Ixz=inertia["Ixz"],
+        ix=inertia["Ix"],
+        iy=inertia["Iy"],
+        iz=inertia["Iz"],
+        ixz=inertia["Ixz"],
         s=geometry["S"],
         b=geometry["b"],
         c=geometry["c"],
+        arm_z_engine=propulsion.get("arm_z_engine", -0.05),
+        elevator_max=control.get("elevator_max", 10.0),
+        aileron_max=control.get("aileron_max", 30.0),
+        rudder_max=control.get("rudder_max", 10.0),
+        brake_max=control.get("brake_max", 200.0),
         aero_tables_dir=tables_dir,
     )
-
 
 def _build_plot_groups(
     x: NDArray,

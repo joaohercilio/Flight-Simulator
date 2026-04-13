@@ -1,7 +1,7 @@
-# cases/cessna172/plots.toml
-# Cada [[figure]] abre uma janela separada.
-# "groups" lista as linhas de subplots — máximo 3 variáveis por linha.
-# Grupos disponíveis:
+# cases/mushu/plots.toml
+# Each [[figure]] opens a new window.
+# "groups" lists subplot lines. Maximum 3 lines.
+# Available gropus:
 #   Position, Velocity NED, Euler angles, Euler rates,
 #   Angular velocity, Aerodynamics, Body velocity
 

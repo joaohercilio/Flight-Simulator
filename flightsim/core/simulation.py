@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 from flightsim.core.state_eq import make_state_eq
 from flightsim.core.integrator import rk4
 from flightsim.atmosphere.model import AtmosphereModel
+from flightsim.aero.database import AeroDatabase
 
 
 def run_simulation(
@@ -17,7 +18,7 @@ def run_simulation(
     t_start: float,
     t_end: float,
     dt: float,
-    atmosphere: AtmosphereModel | None = None,
+    atmosphere: AtmosphereModel,
 ) -> tuple[NDArray, NDArray, NDArray]:
     """Runs the 6DOF simulation using RK4 integration.
 
@@ -35,8 +36,6 @@ def run_simulation(
             x:  State history, shape (12, N).
             dx: State derivative history, shape (12, N).
     """
-    if atmosphere is None:
-        atmosphere = AtmosphereModel()
 
     t  = np.arange(t_start, t_end + dt, dt)
     x  = np.zeros((12, len(t)))

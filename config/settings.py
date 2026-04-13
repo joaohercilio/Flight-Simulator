@@ -11,6 +11,8 @@ from numpy.typing import NDArray
 
 from flightsim.core.state import StateVector
 
+from flightsim.atmosphere.model import AtmosphereModel, ConstantAtmosphere
+
 
 @dataclasses.dataclass
 class SimConfig:
@@ -32,7 +34,9 @@ class SimConfig:
     t_end: float
     dt: float
     x0: NDArray
+    atmosphere: AtmosphereModel
     save_figures: bool
+    plot_config: pathlib.Path
     output_dir: pathlib.Path
     show_gui: bool
 
@@ -64,9 +68,10 @@ class SimConfig:
             t_end=sim["t_end"],
             dt=sim["dt"],
             x0=x0,
+            atmosphere=AtmosphereModel.from_dict(data.get("atmosphere", {})),
             plot_config=plot_config,
             save_figures=plots.get("save_figures", False),
-            output_dir=pathlib.Path(plots.get("output_dir", "results/")),
+            output_dir=config_dir / plots.get("output_dir", "results/"),
             show_gui=plots.get("show_gui", True),
         )
 
