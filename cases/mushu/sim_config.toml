@@ -15,7 +15,7 @@ gravity = 9.81         # m/s^2
 
 [initial_condition]
 # Velocity body axis (m/s)
-u = 14.0
+u = 16.0
 v = 0.0
 w = 0.0
 

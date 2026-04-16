@@ -70,9 +70,9 @@ def make_state_eq(
 
         # --- control surface deflections ---
         ele_cmd, ail_cmd, rud_cmd, throttle_cmd, brake_cmd = control_input()
-        el  = 10.0 * ele_cmd
+        el  = 25.0 * ele_cmd
         ail = 30.0 * ail_cmd
-        rud = 10.0 * rud_cmd
+        rud = 30.0 * rud_cmd
 
         # --- aerodynamic forces and moments (wind axes) ---
         drag, lift, side, roll_moment, pitch_moment, yaw_moment = aerodynamic_force_wind(
@@ -90,7 +90,7 @@ def make_state_eq(
         )
 
         # --- propulsion and braking ---
-        thrust = throttle_cmd*(-0.0005 * speed**3 - 0.0053 * speed**2 - 0.928 * speed + 38.37) * rho / 1.225
+        thrust = throttle_cmd*(0.0010482548 * speed**3 - 0.0715234262 * speed**2 - 0.7276455480 * speed + 44.085638000) * rho / 1.225
         max_brake = 200.0
         bm = 100.0 / max_brake**2
         brake  = (brake_cmd * max_brake) ** 2
