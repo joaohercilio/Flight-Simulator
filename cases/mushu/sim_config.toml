@@ -10,24 +10,24 @@ file = "data/aircraft_model.dat"
 
 [atmosphere]
 model   = "constant"
-density = 1.225        # kg/m^3
+density = 1.1        # kg/m^3
 gravity = 9.81         # m/s^2
 
 [initial_condition]
 # Velocity body axis (m/s)
-u = 50.0
+u = 14.0
 v = 0.0
 w = 0.0
 
 # atitude (rad)
 phi = 0.0
-theta = 0.02
+theta = 0.0
 psi  = 0.0
 
 # Ned positions (m)
 x_e = 0.0
 y_e = 0.0
-z_e = -1000.0
+z_e = -250.0
 
 # Angular rates (rad/s)
 p = 0.0

@@ -41,8 +41,8 @@ STEPS_PER_SEND = FDM_HZ // SEND_HZ   # passos internos por callback
 # Origem geodésica (NED → lat/lon)
 # ---------------------------------------------------------------
 _R_EARTH   = 6_378_137.0   # m
-_LAT0_DEG  = 19.7205
-_LON0_DEG  = -155.0610
+_LAT0_DEG  = 26.7205
+_LON0_DEG  = 48.0610
 _LAT0      = np.radians(_LAT0_DEG)
 _LON0      = np.radians(_LON0_DEG)
 
