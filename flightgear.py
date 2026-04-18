@@ -23,8 +23,8 @@ DT           = 1.0 / FDM_HZ
 STEPS_PER_SEND = FDM_HZ // SEND_HZ   
 
 _R_EARTH   = 6_378_137.0   
-_LAT0_DEG  = 26.7205
-_LON0_DEG  = 48.0610
+_LAT0_DEG  = 27.039
+_LON0_DEG  = 49.405
 _LAT0      = np.radians(_LAT0_DEG)
 _LON0      = np.radians(_LON0_DEG)
 
