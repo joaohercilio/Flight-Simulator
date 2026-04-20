@@ -23,7 +23,7 @@ def make_state_eq(
     model: AircraftModel,
     aero_db: AeroDatabase,
     control_input,
-    atmosphere: AtmosphereModel,
+    atmosphere: AtmosphereModel
 ):
     """Builds the RHS of the 6DOF state equation dx/dt = f(x, t).
 
@@ -70,9 +70,9 @@ def make_state_eq(
 
         # --- control surface deflections ---
         ele_cmd, ail_cmd, rud_cmd, throttle_cmd, brake_cmd = control_input()
-        el  = 25.0 * ele_cmd
-        ail = 30.0 * ail_cmd
-        rud = 30.0 * rud_cmd
+        el  = ele_cmd
+        ail = ail_cmd
+        rud = rud_cmd
 
         # --- aerodynamic forces and moments (wind axes) ---
         drag, lift, side, roll_moment, pitch_moment, yaw_moment = aerodynamic_force_wind(

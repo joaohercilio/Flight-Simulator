@@ -11,8 +11,8 @@ import optvl
 
 CASE_DIR = pathlib.Path("cases/mushu")
 def levelflight(mass, rho, V, ixx, iyy, izz, izx):
-    os.chdir(r"C:\Users\enzo_\Desktop\AVL\Design Files-20260310T235542Z-3-001\Design Files\466 - 2C\Avl_00001")
-    ovl = optvl.OVLSolver(geo_file="Setup_cruzeiro _subido_ev 015_cortado.avl")
+    #os.chdir(r"C:\Users\enzo_\Desktop\AVL\Design Files-20260310T235542Z-3-001\Design Files\466 - 2C\Avl_00001")
+    ovl = optvl.OVLSolver(geo_file="Setup_cruzeiro _subido_ev015_cortado.avl")
     #DADOS DE REFERÊNCIA
     ref_data = ovl.get_reference_data()
 
