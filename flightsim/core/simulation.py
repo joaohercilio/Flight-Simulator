@@ -19,8 +19,8 @@ import os
 
 
 def levelflight(mass, rho, V, ixx, iyy, izz, izx):
-    #os.chdir(r"C:\Users\enzo_\Desktop\AVL\Design Files-20260310T235542Z-3-001\Design Files\466 - 2C\Avl_00001")
-    ovl = optvl.OVLSolver(geo_file="Setup_cruzeiro_subido_ev015_cortado.avl")
+    os.chdir(r"C:\Users\enzo_\Desktop\AVL\Design Files-20260310T235542Z-3-001\Design Files\466 - 2C\Avl_00001")
+    ovl = optvl.OVLSolver(geo_file="Setup_cruzeiro _subido_ev 015_cortado.avl")
     #DADOS DE REFERÊNCIA
     ref_data = ovl.get_reference_data()
 
@@ -116,8 +116,8 @@ def run_simulation(
     ail_deflect = 0.0
 
     ele_start   = 5.0
-    ele_end     = 7.0
-    ele_deflect = 20
+    ele_end     = 6.0
+    ele_deflect = 25
 
     current_t = t_start
 
