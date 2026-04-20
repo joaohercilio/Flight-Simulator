@@ -7,7 +7,7 @@ from utils.io import load_model, generate_plots
 from flightsim.core.simulation import run_simulation
 from flightsim.aero.database import AeroDatabase
 
-CASE_DIR = pathlib.Path("cases\mushu")
+CASE_DIR = pathlib.Path("cases/mushu")
 
     
 

@@ -74,7 +74,7 @@ def aerodynamic_force_wind(
     half_c_v = model.c / (2 * speed)
     gc = aero_db.get_coeff
 
-    cl = gc("CL0", alpha, beta) + gc("CL_el", alpha, beta) * el
+    cl = gc("CL0", alpha, beta) + gc("CL_el", alpha, beta) * el + gc("CL_q",  alpha, beta) * q * half_c_v
 
     cd = gc("CD0", alpha, beta) + gc("CD_el", alpha, beta) * el
 
