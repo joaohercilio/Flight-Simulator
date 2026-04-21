@@ -12,6 +12,7 @@ from flightsim.core.state_eq import make_state_eq
 from flightsim.core.integrator import rk4_step
 from flightsim.aero.database import AeroDatabase
 from flightsim.core.simulation import compute_trim
+from flightsim.core.state import StateIndex
 
 # ---------------------------------------------------------------
 # Constants (Keep these global so the worker process can see them)
@@ -108,39 +109,40 @@ class RCTransmitter:
         rud      =  self._joystick.get_axis(self._AXIS_RUDDER)
         throttle = (self._joystick.get_axis(self._AXIS_THROTTLE) + 1.0) / 2.0
         brake    = (self._joystick.get_axis(self._AXIS_BRAKE)    + 1.0) / 2.0
-        return ele, ail, rud, throttle, 0.0
+        return 25*ele, 20*ail, 30*rud, 30*throttle, 0.0
 
 class FlightGearBridge:
-    def __init__(self, case_dir: pathlib.Path, manual_control: bool = False) -> None:
+    def __init__(self, case_dir: pathlib.Path, manual_control: bool = False, start_in_air: bool = False) -> None:
         cfg   = SimConfig.from_toml_file(case_dir / "sim_config.toml")
         model = load_model(case_dir / "aircraft_model.toml")
         aero_db = AeroDatabase(model.aero_tables_dir)
 
-        
-        V = 16.0
-        alpha_trim, trim_elevator, trim_throttle = compute_trim(
-            model,
-            aero_db=aero_db,
-            g=9.81,
-            V=V,
-            rho=1.1
-        )
-
-        
-        cfg.x0[6] = V * np.cos(alpha_trim)
-        cfg.x0[8] = V * np.sin(alpha_trim)
-        cfg.x0[4] = alpha_trim
-
-        if manual_control:
-            self._transmitter = RCTransmitter()
+        if start_in_air:
+            # ---------------------------------------------------------
+            # AIRBORNE START: Compute trim and override initial state
+            # ---------------------------------------------------------
+            V = 16.0  # Use a realistic cruise speed, not 1.0
+            alpha_trim, trim_elevator, trim_throttle = compute_trim(
+                model,
+                aero_db=aero_db,
+                g=9.81,
+                V=V,
+                rho=1.1
+            )
+            
+            cfg.x0[StateIndex.U] = V * np.cos(alpha_trim)
+            cfg.x0[StateIndex.W] = V * np.sin(alpha_trim)
+            cfg.x0[StateIndex.THETA] = alpha_trim
+            
+            # Ensure we aren't underground if starting in the air
+            if cfg.x0[StateIndex.Z_E] == 0:
+                cfg.x0[StateIndex.Z_E] = -50.0  # 50 meters up
         else:
-            self._transmitter = ScriptedTransmitter(trim_elevator, trim_throttle)
-
-        self._x  = cfg.x0.copy()
-        self._dx = np.zeros_like(self._x)
-        
-        self._f  = make_state_eq(model, aero_db, self._transmitter.read, cfg.atmosphere)
-        self._frame = 0
+            # ---------------------------------------------------------
+            # GROUND START: Use TOML state, zero out trim offsets
+            # ---------------------------------------------------------
+            trim_elevator = 0.0
+            trim_throttle = 0.0
 
         if manual_control:
             self._transmitter = RCTransmitter()
@@ -162,7 +164,6 @@ class FlightGearBridge:
             if hasattr(self._transmitter, 'sim_time'):
                 self._transmitter.sim_time += DT
 
-        x_e, y_e, z_e     = self._x[0], self._x[1], self._x[2]
         x_e, y_e, z_e     = self._x[0], self._x[1], self._x[2]
         phi, theta, psi   = self._x[3], self._x[4], self._x[5]
         
@@ -210,9 +211,6 @@ class FlightGearBridge:
             print("\nStopped.")
 
 if __name__ == "__main__":
-    # On Windows, all code MUST be under this if __name__ block
-    # to avoid recursive process spawning.
-    
-    # Set manual_control=False to watch the automated maneuver
-    bridge = FlightGearBridge(CASE_DIR, manual_control=False)
+    # Start trimmed at 16 m/s, using the automated script
+    bridge = FlightGearBridge(CASE_DIR, manual_control=True, start_in_air=False)
     bridge.run()

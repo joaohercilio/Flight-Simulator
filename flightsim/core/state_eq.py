@@ -96,6 +96,85 @@ def make_state_eq(
         fx = fx + thrust
         pitch_moment = pitch_moment + arm_z_engine * thrust
 
+        # --- gear geometry (relative to CG, body frame) ---
+        x_ng = 0.2313
+        x_mg = -0.0187
+        y_mg = 0.2455
+
+        # Spring/Damper constants (you will need to tune these based on mass)
+        k_spring = 5000.0  # N/m
+        c_damper = 500.0   # N*s/m
+
+        # --- gear geometry (relative to CG, body frame) ---
+        x_ng = 0.2313
+        x_mg = -0.0187
+        y_mg = 0.2455
+        z_gear = 0.15 # Ensure this matches your model!
+
+        # --- DYNAMIC SPRING & DAMPER CALCULATION ---
+        total_weight = model.mass * 9.81
+        wheelbase = x_ng - x_mg
+        
+        # Calculate actual weight resting on each gear using lever arms
+        weight_ng = total_weight * (abs(x_mg) / wheelbase)
+        weight_per_mg = (total_weight * (x_ng / wheelbase)) / 2.0
+        
+        # Springs (tuned for 3cm / 0.03m compression under static weight)
+        k_ng = weight_ng / 0.03
+        k_mg = weight_per_mg / 0.03
+        
+        # Dampers (Critical damping ratio zeta = 1.0)
+        c_ng = 2.0 * 1.0 * np.sqrt(k_ng * (weight_ng / 9.81))
+        c_mg = 2.0 * 1.0 * np.sqrt(k_mg * (weight_per_mg / 9.81))
+
+        # --- NEW: GROUND INTERACTION ---
+        gear_fx, gear_fy, gear_fz = 0.0, 0.0, 0.0
+        gear_L, gear_M, gear_N = 0.0, 0.0, 0.0
+
+        # 1. Transform Z-positions to Earth Frame
+        z_earth_ng = s.z_e + (-x_ng * sin_tht + z_gear * cos_phi * cos_tht) 
+        z_earth_mg_left = s.z_e + (-x_mg * sin_tht - y_mg * sin_phi * cos_tht + z_gear * cos_phi * cos_tht)
+        z_earth_mg_right = s.z_e + (-x_mg * sin_tht + y_mg * sin_phi * cos_tht + z_gear * cos_phi * cos_tht)
+
+        # 2. Local Z velocities for damping (V_z = w + p*y - q*x)
+        w_ng = s.w - s.q * x_ng
+        w_mgl = s.w + s.p * (-y_mg) - s.q * x_mg  # FIXED: + p * y
+        w_mgr = s.w + s.p * (y_mg)  - s.q * x_mg  # FIXED: + p * y
+
+        # 3. Calculate Forces and Moments (Nose Gear)
+        if z_earth_ng > 0:  
+            fz_ng = -k_ng * z_earth_ng - c_ng * w_ng 
+            fz_ng = min(fz_ng, 0.0)  
+            
+            gear_fz += fz_ng
+            gear_M += -x_ng * fz_ng  
+
+        # 4. Calculate Forces and Moments (Main Gears)
+        # Left
+        if z_earth_mg_left > 0:
+            fz_mgl = -k_mg * z_earth_mg_left - c_mg * w_mgl
+            fz_mgl = min(fz_mgl, 0.0)
+            
+            gear_fz += fz_mgl
+            gear_M += -x_mg * fz_mgl 
+            gear_L += -y_mg * fz_mgl  
+
+        # Right
+        if z_earth_mg_right > 0:
+            fz_mgr = -k_mg * z_earth_mg_right - c_mg * w_mgr
+            fz_mgr = min(fz_mgr, 0.0)
+            
+            gear_fz += fz_mgr
+            gear_M += -x_mg * fz_mgr
+            gear_L += y_mg * fz_mgr  
+
+        # --- ADD TO EXISTING FORCES ---
+        fx += gear_fx
+        fz += gear_fz
+        fy += gear_fy
+        roll_moment += gear_L
+        pitch_moment += gear_M
+        yaw_moment += gear_N
         # --- state derivatives ---
         dx = np.zeros(StateIndex.SIZE)
 
