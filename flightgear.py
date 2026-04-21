@@ -59,17 +59,18 @@ class ScriptedTransmitter:
         # Exact maneuver logic from simulation.py
         ail_start   = 5.0
         ail_end     = 6.0
-        ail_deflect = 20.0 #4.821695697645064*0
+        ail_deflect = 20.0*0 #4.821695697645064*0
 
         ele_start   = 5.0
         ele_end     = 6.0
-        ele_deflect = 0.0 
+        ele_deflect = -15.0 
 
         rud_start = 5.0
         rud_end = 6.0
         rud_deflect = 30.0*0
 
         ele = self._trim_ele + ele_deflect if ele_start <= current_t <= ele_end else self._trim_ele
+        
         ail = ail_deflect if ail_start <= current_t <= ail_end else 0.0
         rud = rud_deflect if rud_start <= current_t <= rud_end else 0.0
 
@@ -116,7 +117,7 @@ class FlightGearBridge:
         aero_db = AeroDatabase(model.aero_tables_dir)
 
         # 1. Compute Trim dynamically (just like in simulation.py)
-        V = 16.7126
+        V = 10.0
         alpha_trim, trim_elevator, trim_throttle = compute_trim(
             model,
             aero_db=aero_db,

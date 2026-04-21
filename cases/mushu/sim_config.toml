@@ -27,7 +27,7 @@ psi  = 0.0
 # Ned positions (m)
 x_e = 0.0
 y_e = 0.0
-z_e = -250.0
+z_e = -0.0
 
 # Angular rates (rad/s)
 p = 0.0
