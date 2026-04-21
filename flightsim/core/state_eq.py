@@ -91,7 +91,7 @@ def make_state_eq(
 
         # --- propulsion and braking ---
         thrust = throttle_cmd*(0.0010482548 * speed**3 - 0.0715234262 * speed**2 - 0.7276455480 * speed + 44.085638000) * rho / 1.225
-        thrust = 10.408485255472366
+        thrust = throttle_cmd
 
         fx = fx + thrust
         pitch_moment = pitch_moment + arm_z_engine * thrust

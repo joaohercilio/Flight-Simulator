@@ -11,6 +11,7 @@ from utils.io import load_model
 from flightsim.core.state_eq import make_state_eq
 from flightsim.core.integrator import rk4_step
 from flightsim.aero.database import AeroDatabase
+from flightsim.core.simulation import compute_trim
 
 # ---------------------------------------------------------------
 # Constants (Keep these global so the worker process can see them)
@@ -37,6 +38,42 @@ def _ned_to_geodetic(x_e: float, y_e: float) -> tuple[float, float]:
     lat = _LAT0 + x_e / _R_EARTH
     lon = _LON0 + y_e / (_R_EARTH * np.cos(_LAT0))
     return lat, lon
+
+class ScriptedTransmitter:
+    """Provides pre-programmed control inputs for automated test cases."""
+    
+    def __init__(self, trim_ele: float, trim_thr: float):
+        self.sim_time = 0.0  # <--- Time is now externally tracked
+        self._trim_ele = trim_ele
+        self._trim_thr = trim_thr
+        
+    def read(self) -> tuple[float, float, float, float, float]:
+        current_t = self.sim_time
+        
+        ele = self._trim_ele
+        ail = 0.0
+        rud = 0.0
+        throttle = self._trim_thr 
+        brake = 0.0
+
+        # Exact maneuver logic from simulation.py
+        ail_start   = 5.0
+        ail_end     = 6.0
+        ail_deflect = 20.0 #4.821695697645064*0
+
+        ele_start   = 5.0
+        ele_end     = 6.0
+        ele_deflect = 0.0 
+
+        rud_start = 5.0
+        rud_end = 6.0
+        rud_deflect = 30.0*0
+
+        ele = self._trim_ele + ele_deflect if ele_start <= current_t <= ele_end else self._trim_ele
+        ail = ail_deflect if ail_start <= current_t <= ail_end else 0.0
+        rud = rud_deflect if rud_start <= current_t <= rud_end else 0.0
+
+        return ele, ail, rud, throttle, brake
 
 class RCTransmitter:
     """Reads control inputs. Pickle-safe for Windows multiprocessing."""
@@ -73,16 +110,46 @@ class RCTransmitter:
         return ele, ail, rud, throttle, 0.0
 
 class FlightGearBridge:
-    def __init__(self, case_dir: pathlib.Path) -> None:
+    def __init__(self, case_dir: pathlib.Path, manual_control: bool = False) -> None:
         cfg   = SimConfig.from_toml_file(case_dir / "sim_config.toml")
         model = load_model(case_dir / "aircraft_model.toml")
         aero_db = AeroDatabase(model.aero_tables_dir)
 
-        self._transmitter = RCTransmitter()
+        # 1. Compute Trim dynamically (just like in simulation.py)
+        V = 16.7126
+        alpha_trim, trim_elevator, trim_throttle = compute_trim(
+            model,
+            aero_db=aero_db,
+            g=9.81,
+            V=V,
+            rho=1.1
+        )
+
+        # 2. Update initial states to match trim
+        # Indices: 4 is THETA, 6 is U, 8 is W
+        cfg.x0[6] = V * np.cos(alpha_trim)
+        cfg.x0[8] = V * np.sin(alpha_trim)
+        cfg.x0[4] = alpha_trim
+
+        if manual_control:
+            self._transmitter = RCTransmitter()
+        else:
+            self._transmitter = ScriptedTransmitter(trim_elevator, trim_throttle)
+
         self._x  = cfg.x0.copy()
         self._dx = np.zeros_like(self._x)
         
-        # We pass the function pointer, not the initialized joystick
+        self._f  = make_state_eq(model, aero_db, self._transmitter.read, cfg.atmosphere)
+        self._frame = 0
+
+        if manual_control:
+            self._transmitter = RCTransmitter()
+        else:
+            self._transmitter = ScriptedTransmitter(trim_elevator, trim_throttle)
+
+        self._x  = cfg.x0.copy()
+        self._dx = np.zeros_like(self._x)
+        
         self._f  = make_state_eq(model, aero_db, self._transmitter.read, cfg.atmosphere)
         self._frame = 0
 
@@ -90,7 +157,12 @@ class FlightGearBridge:
         # This runs in the background process spawned by flightgear-python
         for _ in range(STEPS_PER_SEND):
             rk4_step(self._f, self._x, self._dx, DT)
+            
+            # Advance simulation time ONLY after the full step is complete
+            if hasattr(self._transmitter, 'sim_time'):
+                self._transmitter.sim_time += DT
 
+        x_e, y_e, z_e     = self._x[0], self._x[1], self._x[2]
         x_e, y_e, z_e     = self._x[0], self._x[1], self._x[2]
         phi, theta, psi   = self._x[3], self._x[4], self._x[5]
         
@@ -116,8 +188,11 @@ class FlightGearBridge:
         alpha    = np.degrees(np.arctan2(w, u))
         beta     = np.degrees(np.arcsin(np.clip(v / v_air, -1.0, 1.0)))
 
+        # Grab the exact simulation time if it's the scripted transmitter
+        sim_t_str = f" t={self._transmitter.sim_time:.1f}s " if hasattr(self._transmitter, 'sim_time') else " "
+
         print(
-            f"ele: {ele:+.2f}  ail: {ail:+.2f}  rud: {rud:+.2f}  thr: {throttle:.2f}  "
+            f"[{sim_t_str}] ele: {ele:+.2f}  ail: {ail:+.2f}  rud: {rud:+.2f}  thr: {throttle:.2f}  "
             f"alt: {-self._x[2]:.0f} m  alpha: {alpha:.1f}°  beta: {beta:.1f}° v_air: {v_air:.1f} m/s" , end='\r'
         )
 
@@ -137,5 +212,7 @@ class FlightGearBridge:
 if __name__ == "__main__":
     # On Windows, all code MUST be under this if __name__ block
     # to avoid recursive process spawning.
-    bridge = FlightGearBridge(CASE_DIR)
+    
+    # Set manual_control=False to watch the automated maneuver
+    bridge = FlightGearBridge(CASE_DIR, manual_control=False)
     bridge.run()

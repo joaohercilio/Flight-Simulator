@@ -58,7 +58,7 @@ class SimConfig:
         plots = data.get("plots", {})
 
         model_file = config_dir / data["model"]["file"]
-        plot_config = config_dir / plots.get("config_file", "plots.toml")
+        plot_config = config_dir / plots.get("config_file", "C:/Users/enzo_/Documents/GitHub/Flight-Simulator/cases/mushu/plots.toml")
 
         x0 = StateVector.from_dict(data["initial_condition"]).to_array()
 

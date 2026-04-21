@@ -4,7 +4,7 @@
 import pathlib
 from config.settings import SimConfig
 from utils.io import load_model, generate_plots
-from flightsim.core.simulation import run_simulation
+from flightsim.core.simulation import run_simulation, sample_and_save_loads
 from flightsim.aero.database import AeroDatabase
 
 CASE_DIR = pathlib.Path("cases/mushu")
@@ -24,7 +24,8 @@ def main() -> None:
         cfg.t_start, cfg.t_end, cfg.dt,
         atmosphere=cfg.atmosphere
     )
-
+    #sample_and_save_loads(t=t, x=x, dx=dx, t_start=5, t_end=5.5, 
+    #                      filename=r"C:\Users\enzo_\Documents\sim_results\aileronVd.csv")
     generate_plots(
         t, x, dx,
         plot_config=cfg.plot_config,

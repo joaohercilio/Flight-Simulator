@@ -29,4 +29,4 @@ brake_max    = 200.0  # N
 
 # Aerodynamic tables
 [aero]
-tables_dir = "aero_tables"   # path relative to this file
+tables_dir = "C:/Users/enzo_/Documents/GitHub/Flight-Simulator/cases/mushu/aero_tables"   # path relative to this file
