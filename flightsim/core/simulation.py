@@ -205,12 +205,12 @@ def run_simulation(
 
     ail_start   = 5.0
     ail_end     = 6.0
-    ail_deflect = 20.0 #4.821695697645064*0
+    ail_deflect = 20.0*0 #4.821695697645064*0
 
     ele_start   = 5.0
     ele_mid     = 6.0
     ele_end     = 6.0
-    ele_deflect = 25*0
+    ele_deflect = -25
 
     rud_start = 5.0
     rud_end = 6.0
