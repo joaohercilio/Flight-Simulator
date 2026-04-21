@@ -43,7 +43,7 @@ class ScriptedTransmitter:
     """Provides pre-programmed control inputs for automated test cases."""
     
     def __init__(self, trim_ele: float, trim_thr: float):
-        self.sim_time = 0.0  # <--- Time is now externally tracked
+        self.sim_time = 0.0  
         self._trim_ele = trim_ele
         self._trim_thr = trim_thr
         
@@ -56,7 +56,7 @@ class ScriptedTransmitter:
         throttle = self._trim_thr 
         brake = 0.0
 
-        # Exact maneuver logic from simulation.py
+        
         ail_start   = 5.0
         ail_end     = 6.0
         ail_deflect = 20.0*0 #4.821695697645064*0
@@ -116,8 +116,8 @@ class FlightGearBridge:
         model = load_model(case_dir / "aircraft_model.toml")
         aero_db = AeroDatabase(model.aero_tables_dir)
 
-        # 1. Compute Trim dynamically (just like in simulation.py)
-        V = 10.0
+        
+        V = 16.0
         alpha_trim, trim_elevator, trim_throttle = compute_trim(
             model,
             aero_db=aero_db,
@@ -126,8 +126,7 @@ class FlightGearBridge:
             rho=1.1
         )
 
-        # 2. Update initial states to match trim
-        # Indices: 4 is THETA, 6 is U, 8 is W
+        
         cfg.x0[6] = V * np.cos(alpha_trim)
         cfg.x0[8] = V * np.sin(alpha_trim)
         cfg.x0[4] = alpha_trim

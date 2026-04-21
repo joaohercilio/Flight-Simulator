@@ -18,7 +18,7 @@ from scipy.optimize import fsolve
 
 import numpy as np
 import pandas as pd
-from flightsim.core.state import StateIndex # Assuming this is where it lives
+from flightsim.core.state import StateIndex
 
 def sample_and_save_loads(t, x, dx, t_start, t_end, filename="loads_data.csv"):
     """
@@ -66,9 +66,6 @@ def sample_and_save_loads(t, x, dx, t_start, t_end, filename="loads_data.csv"):
     
     return df
 
-# --- How to use it after your simulation runs ---
-# t, x, dx = run_simulation(...)
-# df_loads = sample_and_save_loads(t, x, dx, t_start=5.0, t_end=6.5, filename="aileron_kick_loads.csv")
 
 def compute_trim(model, aero_db, g, V, rho):
     """
