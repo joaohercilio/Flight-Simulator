@@ -75,8 +75,8 @@ def aerodynamic_force_wind(
     gc = aero_db.get_coeff
     cl0 = gc("CL0", alpha, beta)
     clmax = 2.00945
-    if cl0 > clmax:
-        cl0 = 0.0
+    #if cl0 > clmax:
+    #    cl0 = 0.0
     cl = cl0 + gc("CL_el", alpha, beta) * el + gc("CL_q",  alpha, beta) * q * half_c_v
 
     cd = gc("CD0", alpha, beta) + gc("CD_el", alpha, beta) * el

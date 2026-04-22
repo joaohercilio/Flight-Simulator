@@ -51,8 +51,8 @@ class ScriptedTransmitter:
     def read(self) -> tuple[float, float, float, float, float]:
         current_t = self.sim_time
         
-        ele = self._trim_ele
-        ele = 0.0
+        ele_init = self._trim_ele
+        ele_init = -1.0
         ail = 0.0
         rud = 0.0
         throttle = self._trim_thr
@@ -64,20 +64,20 @@ class ScriptedTransmitter:
         ail_end     = 6.0
         ail_deflect = 20.0*0 #4.821695697645064*0
 
-        ele_start   = 4.0
-        ele_end     = 5.0
-        ele_deflect = -4.0 
+        ele_start   = 3.5
+        ele_end     = 5.5
+        ele_deflect = -5.0 
 
         rud_start = 5.0
         rud_end = 6.0
         rud_deflect = 30.0*0
 
-        ele = self._trim_ele + ele_deflect if ele_start <= current_t <= ele_end else self._trim_ele
+        ele = ele_init + ele_deflect if ele_start <= current_t <= ele_end else ele_init
         
         ail = ail_deflect if ail_start <= current_t <= ail_end else 0.0
         rud = rud_deflect if rud_start <= current_t <= rud_end else 0.0
 
-        if current_t < ele_end+1:
+        if current_t < ele_end+10:
             throttle = 1.0
         else:
             throttle = 0.5

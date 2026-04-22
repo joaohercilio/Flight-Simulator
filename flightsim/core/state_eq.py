@@ -94,13 +94,14 @@ def make_state_eq(
         #thrust = throttle_cmd
 
         fx = fx + thrust
+        
         pitch_moment = pitch_moment + arm_z_engine * thrust
-
+        #pitch_moment=0
         
         x_cg = model.x_cg
         z_cg = model.z_cg
-        pos_mg = 0.38
-        B_mg = 0.25
+        pos_mg = 0.28 + 0.2
+        B_mg = 0.25 + 0.2
         x_ng = (x_cg - (pos_mg-B_mg))
         x_mg = (x_cg - pos_mg)
         y_mg = 0.2455
