@@ -52,9 +52,11 @@ class ScriptedTransmitter:
         current_t = self.sim_time
         
         ele = self._trim_ele
+        ele = 0.0
         ail = 0.0
         rud = 0.0
-        throttle = self._trim_thr 
+        throttle = self._trim_thr
+        throttle = 1.0 
         brake = 0.0
 
         
@@ -62,9 +64,9 @@ class ScriptedTransmitter:
         ail_end     = 6.0
         ail_deflect = 20.0*0 #4.821695697645064*0
 
-        ele_start   = 5.0
-        ele_end     = 6.0
-        ele_deflect = -15.0 
+        ele_start   = 4.0
+        ele_end     = 5.0
+        ele_deflect = -4.0 
 
         rud_start = 5.0
         rud_end = 6.0
@@ -74,6 +76,11 @@ class ScriptedTransmitter:
         
         ail = ail_deflect if ail_start <= current_t <= ail_end else 0.0
         rud = rud_deflect if rud_start <= current_t <= rud_end else 0.0
+
+        if current_t < ele_end+1:
+            throttle = 1.0
+        else:
+            throttle = 0.5
 
         return ele, ail, rud, throttle, brake
 
@@ -212,5 +219,5 @@ class FlightGearBridge:
 
 if __name__ == "__main__":
     # Start trimmed at 16 m/s, using the automated script
-    bridge = FlightGearBridge(CASE_DIR, manual_control=True, start_in_air=False)
+    bridge = FlightGearBridge(CASE_DIR, manual_control=False, start_in_air=False)
     bridge.run()

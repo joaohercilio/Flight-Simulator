@@ -34,6 +34,9 @@ class AircraftModel:
     iy:            float
     iz:            float
     ixz:           float
+    x_cg:          float
+    y_cg:          float
+    z_cg:          float
     s:             float
     b:             float
     c:             float
@@ -97,6 +100,9 @@ def load_model(model_file: pathlib.Path) -> AircraftModel:
         iy=inertia["Iy"],
         iz=inertia["Iz"],
         ixz=inertia["Ixz"],
+        x_cg = inertia["x_cg"],
+        y_cg = inertia["y_cg"],
+        z_cg = inertia["z_cg"],
         s=geometry["S"],
         b=geometry["b"],
         c=geometry["c"],

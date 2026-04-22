@@ -15,19 +15,19 @@ gravity = 9.81         # m/s^2
 
 [initial_condition]
 # Velocity body axis (m/s)
-u = 14.0
+u = 0.0
 v = 0.0
 w = 0.0
 
 # atitude (rad)
 phi = 0.0
-theta = 0.0141315818875
+theta = 0.0
 psi  = 0.0
 
 # Ned positions (m)
 x_e = 0.0
 y_e = 0.0
-z_e = -0.0
+z_e = -0.308
 
 # Angular rates (rad/s)
 p = 0.0
