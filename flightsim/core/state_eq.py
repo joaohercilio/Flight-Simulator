@@ -100,8 +100,8 @@ def make_state_eq(
         
         x_cg = model.x_cg
         z_cg = model.z_cg
-        pos_mg = 0.28 + 0.2
-        B_mg = 0.25 + 0.2
+        pos_mg = 0.28
+        B_mg = 0.25
         x_ng = (x_cg - (pos_mg-B_mg))
         x_mg = (x_cg - pos_mg)
         y_mg = 0.2455
