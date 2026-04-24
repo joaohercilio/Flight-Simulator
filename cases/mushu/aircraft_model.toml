@@ -3,11 +3,11 @@
 
 # Inertia
 [inertia]
-mass = 9.848   # kg      — total mass
-Ix   = 0.21441685042   # kg.m^2  — roll moment of inertia
-Iy   = 0.37107404812   # kg.m^2  — pitch moment of inertia
-Iz   = 0.50911049121   # kg.m^2  — yaw moment of inertia
-Ixz  = 0.0654148776      # kg.m^2  — product of inertia (0 for symmetric aircraft)
+mass = 10.2   # kg      — total mass
+Ix   = 0.165275918   # kg.m^2  — roll moment of inertia
+Iy   = 0.356824557   # kg.m^2  — pitch moment of inertia
+Iz   = 0.437512796   # kg.m^2  — yaw moment of inertia
+Ixz  = 0.070244530      # kg.m^2  — product of inertia (0 for symmetric aircraft)
 
 # Wing geometry
 [geometry]
