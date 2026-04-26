@@ -187,7 +187,7 @@ def run_simulation(
     Va = 16.7126 #Manobra, m/s, valor definido por cargas (?)
     Vc = 18.4860 #Cruzeiro, m/s, valor definido por cargas (?)
     Vd = 23.1075 #Mergulho, m/s, valor definido por cargas (?)
-    V = Vd
+    V = Va
 
     alpha_trim, elevator_trim, thrust_trim = compute_trim(
         model,
@@ -209,8 +209,8 @@ def run_simulation(
     aero_db = AeroDatabase(model.aero_tables_dir)
 
     ail_start   = 5.0
-    ail_end     = 6.0
-    ail_deflect = 4.821695697645064 #18.081358866168987*0 20*0
+    ail_end     = 30.0
+    ail_deflect = 20.0 #4.821695697645064 #18.081358866168987*0 20*0
 
 
     ele_start   = 5.0
