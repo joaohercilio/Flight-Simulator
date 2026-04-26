@@ -3,7 +3,7 @@
 
 # Inertia
 [inertia]
-mass = 10.2   # kg      — total mass
+mass = 10.4   # kg      — total mass
 Ix   = 0.165275918   # kg.m^2  — roll moment of inertia
 Iy   = 0.356824557   # kg.m^2  — pitch moment of inertia
 Iz   = 0.437512796   # kg.m^2  — yaw moment of inertia

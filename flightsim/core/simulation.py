@@ -209,8 +209,8 @@ def run_simulation(
     aero_db = AeroDatabase(model.aero_tables_dir)
 
     ail_start   = 5.0
-    ail_end     = 30.0
-    ail_deflect = 20.0 #4.821695697645064 #18.081358866168987*0 20*0
+    ail_end     = 6.0
+    ail_deflect = 20.0*0 #4.821695697645064 #18.081358866168987*0 20*0
 
 
     ele_start   = 5.0
@@ -219,8 +219,8 @@ def run_simulation(
     ele_deflect = -25.0*0
 
     rud_start = 5.0
-    rud_end = 6.0
-    rud_deflect = 30.0*0
+    rud_end = 10.0
+    rud_deflect = 35.0
 
     current_t = t_start
 
