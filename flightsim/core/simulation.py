@@ -209,9 +209,15 @@ def run_simulation(
     aero_db = AeroDatabase(model.aero_tables_dir)
 
     ail_start   = 5.0
-    ail_end     = 10.0
-    ail_deflect = 4.4110718492343945*0 # 18.38036809815951 # *0 20*0
-
+    ail_end     = 6.0
+    if V == Va:
+        ail_deflect = 20.0
+    elif V == Vc:
+        ail_deflect = 18.38036809815951
+    elif V == Vd:
+        ail_deflect = 4.4110718492343945
+    
+    ail_deflect = 2.0*0
 
     ele_start   = 5.0
     ele_mid     = 6.0
@@ -219,8 +225,8 @@ def run_simulation(
     ele_deflect = -25.0*0
 
     rud_start = 5.0
-    rud_end = 30.0
-    rud_deflect = 3.0
+    rud_end = 6.0
+    rud_deflect = 2.0
 
     current_t = t_start
 

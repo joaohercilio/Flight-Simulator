@@ -2,7 +2,7 @@
 
 [simulation]
 t_start = 0.0
-t_end   = 30.0
+t_end   = 10.0
 dt      = 0.01
 
 [model]
@@ -15,13 +15,13 @@ gravity = 9.81         # m/s^2
 
 [initial_condition]
 # Velocity body axis (m/s)
-u = 13.998602112
+u = 0.0
 v = 0.0
-w = 0.197835561592
+w = 0.0
 
 # atitude (rad)
 phi = 0.0
-theta = 0.0141315818875
+theta = 0.0
 psi  = 0.0
 
 # Ned positions (m)
