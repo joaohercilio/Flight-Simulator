@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from flightsim.aero.database import AeroDatabase
 from utils.io import AircraftModel
+import numpy as np
 
 
 def aerodynamic_force_body(
@@ -73,11 +74,11 @@ def aerodynamic_force_wind(
     half_b_v = model.b / (2 * speed)
     half_c_v = model.c / (2 * speed)
     gc = aero_db.get_coeff
-    cl0 = gc("CL0", alpha, beta)
-    clmax = 2.00945
-    #if cl0 > clmax:
-    #    cl0 = 0.0
-    cl = cl0 + gc("CL_el", alpha, beta) * el + gc("CL_q",  alpha, beta) * q * half_c_v
+    if alpha > np.deg2rad(20):
+        cl = 0
+    else:
+        cl0 = gc("CL0", alpha, beta)
+        cl = cl0 + gc("CL_el", alpha, beta) * el + gc("CL_q",  alpha, beta) * q * half_c_v
 
     cd = gc("CD0", alpha, beta) + gc("CD_el", alpha, beta) * el
 
