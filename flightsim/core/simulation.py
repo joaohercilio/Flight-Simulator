@@ -216,11 +216,11 @@ def run_simulation(
     ele_start   = 5.0
     ele_mid     = 6.0
     ele_end     = 10.0
-    ele_deflect = -25.0
+    ele_deflect = -25.0*0
 
     rud_start = 5.0
-    rud_end = 10.0
-    rud_deflect = 35.0*0
+    rud_end = 30.0
+    rud_deflect = 3.0
 
     current_t = t_start
 

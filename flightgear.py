@@ -66,8 +66,8 @@ class ScriptedTransmitter:
         ele_deflect = 0.0 
 
         rud_start = 5.0
-        rud_end = 6.0
-        rud_deflect = 35.0
+        rud_end = 10.0
+        rud_deflect = 3.0
 
         ele = self._trim_ele + ele_deflect if ele_start <= current_t <= ele_end else self._trim_ele
         ail = ail_deflect if ail_start <= current_t <= ail_end else 0.0
