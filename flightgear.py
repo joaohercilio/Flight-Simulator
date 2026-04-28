@@ -66,7 +66,7 @@ class ScriptedTransmitter:
 
         ele_start   = 3.5
         ele_end     = 5.5
-        ele_deflect = -5.0 
+        ele_deflect = -5.0*0
 
         rud_start = 5.0
         rud_end = 6.0
@@ -116,7 +116,7 @@ class RCTransmitter:
         rud      =  self._joystick.get_axis(self._AXIS_RUDDER)
         throttle = (self._joystick.get_axis(self._AXIS_THROTTLE) + 1.0) / 2.0
         brake    = (self._joystick.get_axis(self._AXIS_BRAKE)    + 1.0) / 2.0
-        return 25*ele, 20*ail, 30*rud, 30*throttle, 0.0
+        return 25*ele, 20*ail, 20*rud, throttle, 0.0
 
 class FlightGearBridge:
     def __init__(self, case_dir: pathlib.Path, manual_control: bool = False, start_in_air: bool = False) -> None:
@@ -219,5 +219,5 @@ class FlightGearBridge:
 
 if __name__ == "__main__":
     # Start trimmed at 16 m/s, using the automated script
-    bridge = FlightGearBridge(CASE_DIR, manual_control=False, start_in_air=False)
+    bridge = FlightGearBridge(CASE_DIR, manual_control=True, start_in_air=True)
     bridge.run()

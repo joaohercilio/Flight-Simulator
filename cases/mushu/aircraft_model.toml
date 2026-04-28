@@ -8,7 +8,7 @@ Ix   = 0.21441685042   # kg.m^2  — roll moment of inertia
 Iy   = 0.37107404812   # kg.m^2  — pitch moment of inertia
 Iz   = 0.50911049121   # kg.m^2  — yaw moment of inertia
 Ixz  = 0.0654148776      # kg.m^2  — product of inertia (0 for symmetric aircraft)
-x_cg = 0.2613
+x_cg = 0.3913
 y_cg = 0.0
 z_cg = 0.308
 
