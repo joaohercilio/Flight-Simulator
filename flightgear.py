@@ -116,7 +116,7 @@ class RCTransmitter:
         rud      =  self._joystick.get_axis(self._AXIS_RUDDER)
         throttle = (self._joystick.get_axis(self._AXIS_THROTTLE) + 1.0) / 2.0
         brake    = (self._joystick.get_axis(self._AXIS_BRAKE)    + 1.0) / 2.0
-        return 25*ele, 20*ail, 20*rud, throttle, 0.0
+        return 25*ele, -20*ail, 20*rud, throttle, 0.0
 
 class FlightGearBridge:
     def __init__(self, case_dir: pathlib.Path, manual_control: bool = False, start_in_air: bool = False) -> None:

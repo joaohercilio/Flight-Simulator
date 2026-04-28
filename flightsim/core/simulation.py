@@ -182,7 +182,7 @@ def run_simulation(
     x  = np.zeros((12, n))
     dx = np.zeros((12, n))
 
-    V = 16.7126
+    V = 22.4
 
     alpha_trim, elevator_trim, thrust_trim = compute_trim(
         model,
@@ -210,11 +210,11 @@ def run_simulation(
     ele_start   = 5.0
     ele_mid     = 6.0
     ele_end     = 6.0
-    ele_deflect = -25
+    ele_deflect = -25*0
 
     rud_start = 5.0
     rud_end = 6.0
-    rud_deflect = 30*0
+    rud_deflect = 20.0
 
     current_t = t_start
 
