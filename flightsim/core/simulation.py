@@ -184,9 +184,9 @@ def run_simulation(
 
     x  = np.zeros((12, n))
     dx = np.zeros((12, n))
-    Va = 14.98 #Manobra, m/s, valor definido por cargas (?)
-    Vc = 16.3 #Cruzeiro, m/s, valor definido por cargas (?)
-    Vd = 22.64 #Mergulho, m/s, valor definido por cargas (?)
+    Va = 16.8 #Manobra, m/s, valor definido por cargas (?)
+    Vc = 16.74 #Cruzeiro, m/s, valor definido por cargas (?)
+    Vd = 20.93 #Mergulho, m/s, valor definido por cargas (?)
     V = Va
 
     alpha_trim, elevator_trim, thrust_trim = compute_trim(
@@ -213,20 +213,19 @@ def run_simulation(
     if V == Va:
         ail_deflect = 20.0
     elif V == Vc:
-        ail_deflect = 18.38036809815951
+        ail_deflect = 20.07168458781362
     elif V == Vd:
-        ail_deflect = 4.4110718492343945
-    
-    ail_deflect = 2.0*0
+        ail_deflect = 5.351170568561875
+    ail_deflect = 0.0
 
     ele_start   = 5.0
     ele_mid     = 6.0
-    ele_end     = 10.0
-    ele_deflect = -25.0*0
+    ele_end     = 6.0
+    ele_deflect = 25.0
 
     rud_start = 5.0
     rud_end = 6.0
-    rud_deflect = 2.0
+    rud_deflect = 2.0*0
 
     current_t = t_start
 
