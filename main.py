@@ -25,7 +25,7 @@ def main() -> None:
         atmosphere=cfg.atmosphere
     )
     sample_and_save_loads(t=t, x=x, dx=dx, t_start=5, t_end=5.8, 
-                       filename=r"C:\Users\enzo_\Documents\sim_results\elevator25.csv")
+                       filename=r"C:\Users\enzo_\Documents\sim_results\aileronVd.csv")
     generate_plots(
         t, x, dx,
         plot_config=cfg.plot_config,
