@@ -67,7 +67,7 @@ class ScriptedTransmitter:
 
         rud_start = 5.0
         rud_end = 10.0
-        rud_deflect = 3.0
+        rud_deflect = 3.0*0
 
         ele = self._trim_ele + ele_deflect if ele_start <= current_t <= ele_end else self._trim_ele
         ail = ail_deflect if ail_start <= current_t <= ail_end else 0.0
@@ -116,7 +116,7 @@ class FlightGearBridge:
         aero_db = AeroDatabase(model.aero_tables_dir)
 
         # 1. Compute Trim dynamically (just like in simulation.py)
-        V = 16.7126
+        V = 16.74
         alpha_trim, trim_elevator, trim_throttle = compute_trim(
             model,
             aero_db=aero_db,
