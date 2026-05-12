@@ -52,25 +52,25 @@ class ScriptedTransmitter:
         current_t = self.sim_time
         
         ele_init = self._trim_ele
-        ele_init = -1.0
+        #ele_init = -1.0
         ail = 0.0
         rud = 0.0
         throttle = self._trim_thr
-        throttle = 1.0 
+        #throttle = 1.0 
         brake = 0.0
 
         
         ail_start   = 5.0
-        ail_end     = 6.0
-        ail_deflect = 20.0*0 #4.821695697645064*0
+        ail_end     = 16.0
+        ail_deflect = 20.0 #4.821695697645064*0
 
-        ele_start   = 3.5
-        ele_end     = 5.5
-        ele_deflect = -5.0*0
+        ele_start   = 5.0
+        ele_end     = 16.0
+        ele_deflect = -25.0
 
         rud_start = 5.0
-        rud_end = 6.0
-        rud_deflect = 30.0*0
+        rud_end = 16.0
+        rud_deflect = 30.0
 
         ele = ele_init + ele_deflect if ele_start <= current_t <= ele_end else ele_init
         
@@ -80,7 +80,7 @@ class ScriptedTransmitter:
         if current_t < ele_end+10:
             throttle = 1.0
         else:
-            throttle = 0.5
+            throttle = 1.0
 
         return ele, ail, rud, throttle, brake
 
@@ -116,7 +116,7 @@ class RCTransmitter:
         rud      =  self._joystick.get_axis(self._AXIS_RUDDER)
         throttle = (self._joystick.get_axis(self._AXIS_THROTTLE) + 1.0) / 2.0
         brake    = (self._joystick.get_axis(self._AXIS_BRAKE)    + 1.0) / 2.0
-        return 25*ele, -20*ail, 20*rud, throttle, 0.0
+        return 25*ele, -20*ail, 30*rud, throttle, 0.0
 
 class FlightGearBridge:
     def __init__(self, case_dir: pathlib.Path, manual_control: bool = False, start_in_air: bool = False) -> None:
@@ -219,5 +219,5 @@ class FlightGearBridge:
 
 if __name__ == "__main__":
     # Start trimmed at 16 m/s, using the automated script
-    bridge = FlightGearBridge(CASE_DIR, manual_control=True, start_in_air=True)
+    bridge = FlightGearBridge(CASE_DIR, manual_control=False, start_in_air=True)
     bridge.run()
