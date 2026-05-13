@@ -129,7 +129,8 @@ def _build_plot_groups(
     speed_safe = np.where(speed < 1e-8, 1e-8, speed)
     alpha = np.arctan2(w, u)
     beta  = np.arcsin(np.clip(v / speed_safe, -1.0, 1.0))
-
+    alpha_trim = -2.8192
+    u_trim = 16.74
     rad2deg = 180.0 / np.pi
 
     def _clean(arr: NDArray, tol: float = 1e-6) -> NDArray:
@@ -152,23 +153,23 @@ def _build_plot_groups(
             ("Vel. Down [m/s]",  _clean(dx[StateIndex.Z_E])),
         ],
         "Euler angles": [
-            ("phi [deg]",   x[StateIndex.PHI]   * rad2deg),
-            ("theta [deg]", x[StateIndex.THETA] * rad2deg),
-            ("psi [deg]",   _wrap(x[StateIndex.PSI]) * rad2deg),
+            ("phi [deg]",   _clean(x[StateIndex.PHI]   * rad2deg)),
+            ("theta [deg]", _clean(x[StateIndex.THETA] * rad2deg)),
+            ("psi [deg]",   _wrap(_clean(x[StateIndex.PSI]) * rad2deg)),
         ],
         "Euler rates": [
-            ("phi_dot [deg/s]",   dx[StateIndex.PHI]   * rad2deg),
-            ("theta_dot [deg/s]", dx[StateIndex.THETA] * rad2deg),
-            ("psi_dot [deg/s]",   dx[StateIndex.PSI]   * rad2deg),
+            ("phi_dot [deg/s]",   _clean(dx[StateIndex.PHI]   * rad2deg)),
+            ("theta_dot [deg/s]", _clean(dx[StateIndex.THETA] * rad2deg)),
+            ("psi_dot [deg/s]",   _clean(dx[StateIndex.PSI]   * rad2deg)),
         ],
         "Angular velocity": [
-            ("p [deg/s]", x[StateIndex.P] * rad2deg),
-            ("q [deg/s]", x[StateIndex.Q] * rad2deg),
-            ("r [deg/s]", x[StateIndex.R] * rad2deg),
+            ("p [deg/s]", _clean(x[StateIndex.P] * rad2deg)),
+            ("q [deg/s]", _clean(x[StateIndex.Q] * rad2deg)),
+            ("r [deg/s]", _clean(x[StateIndex.R] * rad2deg)),
         ],
         "Aerodynamics": [
-            ("alpha [deg]",    alpha * rad2deg),
-            ("beta [deg]",     beta  * rad2deg),
+            ("alpha [deg]",    _clean(alpha * rad2deg)),
+            ("beta [deg]",     _clean(beta  * rad2deg)),
             ("Airspeed [m/s]", _clean(speed)),
         ],
         "Body velocity": [
@@ -176,6 +177,19 @@ def _build_plot_groups(
             ("v [m/s]", _clean(v)),
             ("w [m/s]", _clean(w)),
         ],
+        "LinearComparelong": [
+            ("alpha [deg]",    _clean(alpha * rad2deg - alpha_trim)),
+            ("theta [deg]", _clean(x[StateIndex.THETA] * rad2deg - alpha_trim)),
+            ("q [deg/s]", _clean(x[StateIndex.Q] * rad2deg)),
+            ("u [m/s]", _clean(u - u_trim)),
+            
+        ],
+        "LinearComparelat": [
+            ("beta [deg]",     _clean(beta  * rad2deg)),
+            ("phi [deg]",   _clean(x[StateIndex.PHI]   * rad2deg)),
+            ("p [deg/s]", _clean(x[StateIndex.P] * rad2deg)),
+            ("r [deg/s]", _clean(x[StateIndex.R] * rad2deg))
+        ]
     }
 
 
@@ -221,7 +235,7 @@ def _plot_figure(
         return
 
     n_rows = len(valid)
-    fig, axs = plt.subplots(n_rows, 3, figsize=(14, 3 * n_rows), squeeze=False)
+    fig, axs = plt.subplots(n_rows, 4, figsize=(14, 4 * n_rows), squeeze=False)
     fig.subplots_adjust(hspace=0.45, wspace=0.35)
 
     for row, group_name in enumerate(valid):
@@ -234,11 +248,34 @@ def _plot_figure(
             va="center",
             color="gray",
         )
-        for col in range(3):
+        for col in range(4):
             ax = axs[row, col]
             if col < len(variables):
                 label, data = variables[col]
+
+                
+
+                data = np.asarray(data).copy()
+
+                # Remove tiny variations around a constant value
+                if np.max(data) - np.min(data) < 1e-10:
+                    data[:] = np.mean(data)
+
+                 # Remove tiny near-zero noise
+                if np.max(np.abs(data)) < 1e-10:
+                    data[:] = 0.0
+                
                 ax.plot(t, data, linewidth=1.2)
+
+                
+
+                ax.ticklabel_format(axis='y', style='plain', useOffset=False)
+
+                span = np.max(data) - np.min(data)
+
+                if span < 1e-6:
+                    if np.abs(np.mean(data)) < 1e-6:
+                        ax.set_ylim(-1, 1)
                 ax.set_ylabel(label, fontsize=8)
                 ax.set_xlabel("Time [s]", fontsize=8)
                 ax.tick_params(labelsize=7)

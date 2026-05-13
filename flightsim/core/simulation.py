@@ -187,7 +187,7 @@ def run_simulation(
     Va = 15.02 #Manobra, m/s, valor definido por cargas (?)
     Vc = 16.74 #Cruzeiro, m/s, valor definido por cargas (?)
     Vd = 20.93 #Mergulho, m/s, valor definido por cargas (?)
-    V = Vd
+    V = Vc
 
     alpha_trim, elevator_trim, thrust_trim = compute_trim(
         model,
@@ -197,12 +197,14 @@ def run_simulation(
         rho=1.1
         )
 
-
-
+    aperturb=np.deg2rad(2.0) #Perturbation alpha
+    bperturb=np.deg2rad(2.0) #Perturbation beta
+    alpha_trim+= aperturb 
+    beta=bperturb
     x0[StateIndex.U] = V *np.cos(alpha_trim)
     x0[StateIndex.W] = V *np.sin(alpha_trim)
-    x0[StateIndex.THETA] = alpha_trim
-    
+    x0[StateIndex.THETA] = alpha_trim - aperturb
+    x0[StateIndex.V] = V *np.sin(beta) *np.cos(alpha_trim)
 
     x[:, 0] = x0
 
@@ -211,11 +213,11 @@ def run_simulation(
     ail_start   = 5.0
     ail_end     = 6.0
     if V == Va:
-        ail_deflect = 20.0
+        ail_deflect = 20.0*0
     elif V == Vc:
-        ail_deflect = 17.945041816009567
+        ail_deflect = 17.945041816009567*0
     elif V == Vd:
-        ail_deflect = 4.784201305940437
+        ail_deflect = 4.784201305940437*0
    
 
     ele_start   = 5.0

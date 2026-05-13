@@ -13,3 +13,6 @@ groups = ["Euler angles", "Euler rates", "Angular velocity"]
 
 [[figure]]
 groups = ["Aerodynamics", "Body velocity"]
+
+[[figure]]
+groups = ["LinearComparelong", "LinearComparelat"]
