@@ -219,5 +219,5 @@ class FlightGearBridge:
 
 if __name__ == "__main__":
     # Start trimmed at 16 m/s, using the automated script
-    bridge = FlightGearBridge(CASE_DIR, manual_control=False, start_in_air=True)
+    bridge = FlightGearBridge(CASE_DIR, manual_control=True, start_in_air=True)
     bridge.run()
