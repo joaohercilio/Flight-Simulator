@@ -201,33 +201,73 @@ class ScriptedTransmitter:
 class RCTransmitter:
     _AXIS_AILERON  = 0
     _AXIS_ELEVATOR = 1
-    _AXIS_THROTTLE = 2
     _AXIS_RUDDER   = 3
-    _AXIS_BRAKE    = 4
 
     def __init__(self, joystick_index: int = 0) -> None:
         self.joystick_index = joystick_index
-        self._joystick = None 
+        self._joystick = None
+        self._throttle_axis = None
 
     def _ensure_init(self):
         if self._joystick is None:
             pygame.init()
             pygame.joystick.init()
+
             if pygame.joystick.get_count() == 0:
-                raise RuntimeError("No joystick detected. Plug it in!")
+                raise RuntimeError("No joystick detected.")
+
             self._joystick = pygame.joystick.Joystick(self.joystick_index)
             self._joystick.init()
+
             print(f"Joystick initialized: {self._joystick.get_name()}")
+            print(f"Number of axes: {self._joystick.get_numaxes()}")
+
+            
+            time.sleep(2)
+
+            baseline = [
+                self._joystick.get_axis(i)
+                for i in range(self._joystick.get_numaxes())
+            ]
+
+            detected = None
+
+            for _ in range(200):
+                pygame.event.pump()
+
+                for i in range(self._joystick.get_numaxes()):
+                    val = self._joystick.get_axis(i)
+
+                    if abs(val - baseline[i]) > 0.4:
+                        detected = i
+                        break
+
+                if detected is not None:
+                    break
+
+                time.sleep(0.01)
+
+            if detected is None:
+                raise RuntimeError("Could not detect R2 axis.")
+
+            self._throttle_axis = detected
+            print(f"Detected R2 throttle axis: {detected}")
 
     def read(self) -> tuple[float, float, float, float, float]:
         self._ensure_init()
+
         pygame.event.pump()
-        ail      =  self._joystick.get_axis(self._AXIS_AILERON)
-        ele      = -self._joystick.get_axis(self._AXIS_ELEVATOR)
-        rud      =  self._joystick.get_axis(self._AXIS_RUDDER)
-        throttle = (self._joystick.get_axis(self._AXIS_THROTTLE) + 1.0) / 2.0
-        brake    = (self._joystick.get_axis(self._AXIS_BRAKE)    + 1.0) / 2.0
-        return 25*ele, -20*ail, 30*rud, throttle, 0.0
+
+        ail = self._joystick.get_axis(self._AXIS_AILERON)
+        ele = -self._joystick.get_axis(self._AXIS_ELEVATOR)
+        rud = self._joystick.get_axis(self._AXIS_RUDDER)
+
+        raw_thr = self._joystick.get_axis(self._throttle_axis)
+
+        # Convert trigger axis from [-1,1] to [0,1]
+        throttle = (raw_thr + 1.0) / 2.0
+
+        return 25 * ele, -20 * ail, 30 * rud, throttle, 0.0
 
 
 # ---------------------------------------------------------------
@@ -387,7 +427,7 @@ if __name__ == "__main__":
     # Pass everything to the bridge
     bridge = FlightGearBridge(
         case_dir=CASE_DIR, 
-        manual_control=False, # Set to True if using RCTransmitter for the takeoff run!
+        manual_control=True, # Set to True if using RCTransmitter for the takeoff run!
         start_in_air=START_IN_AIR,
         start_alt=start_alt,
         V=V_cruise,
