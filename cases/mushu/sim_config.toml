@@ -27,7 +27,7 @@ psi  = -0.78539816339744830961566084581988
 # Ned positions (m)
 x_e = 0.0
 y_e = 0.0
-z_e = -635.3 #if checking takeoff, use airport ground altitude
+z_e = -635.6 #if checking takeoff, use airport ground altitude
 
 # Angular rates (rad/s)
 p = 0.0

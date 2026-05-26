@@ -56,8 +56,10 @@ def make_state_eq(
     weight_ng_nominal    = total_weight_nominal * (abs(x_mg_nominal) / WHEELBASE)
     weight_per_mg_nominal = (total_weight_nominal * (x_ng_nominal / WHEELBASE)) / 2.0
     
-    k_ng = weight_ng_nominal / 0.03     
-    k_mg = weight_per_mg_nominal / 0.03     
+    k_ng = weight_ng_nominal / 0.03
+    k_ng = 30.7e3     
+    k_mg = weight_per_mg_nominal / 0.03
+    k_mg = 30.7e3     
     c_ng = 2.0 * 1.0 * np.sqrt(k_ng * (weight_ng_nominal / 9.81))
     c_mg = 2.0 * 1.0 * np.sqrt(k_mg * (weight_per_mg_nominal / 9.81))
 
