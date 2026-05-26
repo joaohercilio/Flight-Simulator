@@ -214,7 +214,7 @@ def run_simulation(
 
     rud_start = 5.0
     rud_end = 6.0
-    rud_deflect = 20.0
+    rud_deflect = 20.0*0
 
     current_t = t_start
 

@@ -12,6 +12,8 @@ x_cg = 0.3913
 y_cg = 0.0
 z_cg = 0.308
 
+
+
 # Wing geometry
 [geometry]
 S = 0.7973   # m^2   wing reference area
@@ -20,7 +22,7 @@ c = 0.4209   # m     mean aerodynamic chord
 
 # Propulsion
 [propulsion]
-arm_z_engine = -0.006   # m    vertical distance from CG to thrust line
+arm_z_engine = 0.001   # m    vertical distance from CG to thrust line
                         #     negative = thrust line above CG
 
 # Control surface deflection limits
@@ -34,3 +36,6 @@ brake_max    = 200.0  # N
 [aero]
 tables_dir = "C:/Users/enzo_/Documents/GitHub/Flight-Simulator/cases/mushu/aero_tables"   # path relative to this file
 
+#location parameters (m)
+[ground_altitude]
+alt = -647.0

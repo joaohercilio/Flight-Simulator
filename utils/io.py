@@ -46,6 +46,7 @@ class AircraftModel:
     rudder_max:    float
     brake_max:     float
     aero_tables_dir: pathlib.Path
+    ground_altitude: float
 
     def report(self) -> None:
         """Prints a summary of the aircraft model parameters."""
@@ -68,6 +69,8 @@ class AircraftModel:
         print(f"  brake    : {self.brake_max} N")
         print("--- aero tables ---")
         print(f"  dir  : {self.aero_tables_dir}")
+        print("--- aero tables ---")
+        print(f"  ground altitude  : {self.ground_altitude}")
 
 def load_model(model_file: pathlib.Path) -> AircraftModel:
     """Loads an aircraft model from a TOML file.
@@ -93,6 +96,7 @@ def load_model(model_file: pathlib.Path) -> AircraftModel:
     propulsion = data.get("propulsion", {})
     control    = data.get("control_limits", {})
     tables_dir = model_file.parent / data["aero"]["tables_dir"]
+    ground_altitude = data.get("ground_altitude")
 
     return AircraftModel(
         mass=inertia["mass"],
@@ -112,6 +116,7 @@ def load_model(model_file: pathlib.Path) -> AircraftModel:
         rudder_max=control.get("rudder_max", 10.0),
         brake_max=control.get("brake_max", 200.0),
         aero_tables_dir=tables_dir,
+        ground_altitude=ground_altitude,
     )
 
 def _build_plot_groups(

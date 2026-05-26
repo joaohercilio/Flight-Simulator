@@ -25,8 +25,8 @@ DT           = 1.0 / FDM_HZ
 STEPS_PER_SEND = FDM_HZ // SEND_HZ   
 
 _R_EARTH   = 6_378_137.0   
-_LAT0_DEG  = 27.039
-_LON0_DEG  = 49.405
+_LAT0_DEG  = -23.2292
+_LON0_DEG  = -45.8615
 _LAT0      = np.radians(_LAT0_DEG)
 _LON0      = np.radians(_LON0_DEG)
 
@@ -62,15 +62,15 @@ class ScriptedTransmitter:
         
         ail_start   = 5.0
         ail_end     = 16.0
-        ail_deflect = 20.0 #4.821695697645064*0
+        ail_deflect = 20.0*0 #4.821695697645064*0
 
         ele_start   = 5.0
         ele_end     = 16.0
-        ele_deflect = -25.0
+        ele_deflect = -6.0
 
         rud_start = 5.0
         rud_end = 16.0
-        rud_deflect = 30.0
+        rud_deflect = 30.0*0
 
         ele = ele_init + ele_deflect if ele_start <= current_t <= ele_end else ele_init
         
@@ -219,5 +219,5 @@ class FlightGearBridge:
 
 if __name__ == "__main__":
     # Start trimmed at 16 m/s, using the automated script
-    bridge = FlightGearBridge(CASE_DIR, manual_control=True, start_in_air=True)
+    bridge = FlightGearBridge(CASE_DIR, manual_control=False, start_in_air=False)
     bridge.run()

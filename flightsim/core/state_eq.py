@@ -47,6 +47,7 @@ def make_state_eq(
 
         # --- atmosphere ---
         rho = atmosphere.get_density(s.altitude)
+        print(rho)
         g   = atmosphere.get_gravity(s.altitude)
 
         # --- airspeed and dynamic pressure ---
@@ -100,12 +101,13 @@ def make_state_eq(
         
         x_cg = model.x_cg
         z_cg = model.z_cg
-        pos_mg = 0.28
-        B_mg = 0.25
+        pos_mg = 0.44
+        B_mg = 0.306
         x_ng = (x_cg - (pos_mg-B_mg))
         x_mg = (x_cg - pos_mg)
-        y_mg = 0.2455
-        z_gear = 0.15 
+        y_mg = 0.2
+        z_gear = 0.15
+        ground = model.ground_altitude 
 
         
         total_weight = model.mass * 9.81
@@ -125,67 +127,62 @@ def make_state_eq(
         c_ng = 2.0 * 1.0 * np.sqrt(k_ng * (weight_ng / 9.81))
         c_mg = 2.0 * 1.0 * np.sqrt(k_mg * (weight_per_mg / 9.81))
 
-        #interaction model
+        # --- landing gear interaction ---
         gear_fx, gear_fy, gear_fz = 0.0, 0.0, 0.0
-        gear_L, gear_M, gear_N = 0.0, 0.0, 0.0
-
-        #transformations of landing gear coordinates from body to earth system
+        gear_L,  gear_M,  gear_N  = 0.0, 0.0, 0.0
 
         z_earth_ng       = s.z_e + (-x_ng * sin_tht + z_gear * cos_phi * cos_tht)
         z_earth_mg_left  = s.z_e + (-x_mg * sin_tht - y_mg * sin_phi * cos_tht + z_gear * cos_phi * cos_tht)
         z_earth_mg_right = s.z_e + (-x_mg * sin_tht + y_mg * sin_phi * cos_tht + z_gear * cos_phi * cos_tht)
 
-        #z velocities at each gear 
-        w_ng = s.w - s.q * x_ng #(down - rotation*arm)
-        w_mgl = s.w + s.p * (-y_mg) - s.q * x_mg 
-        w_mgr = s.w + s.p * (y_mg)  - s.q * x_mg  
-        
+        zdot_body = -s.u * sin_tht + s.v * sin_phi * cos_tht + s.w * cos_phi * cos_tht
 
-        # Changing earth reaction force from earth reference to body reference
-        def apply_gear_force(x: float, y: float, z: float, fz_earth: float):
-            """Transforms Earth Z normal force into Body forces and moments."""
-            if fz_earth >= 0: return # The ground can only push up
-            
-            # rotate earth vertical force into xyz
-            fx_b = -fz_earth * sin_tht
-            fy_b =  fz_earth * sin_phi * cos_tht
-            fz_b =  fz_earth * cos_phi * cos_tht
+        zdot_ng  = zdot_body - s.q * x_ng * cos_tht
+        zdot_mgl = zdot_body - s.q * x_mg * cos_tht + s.p * (-y_mg) * cos_phi * cos_tht
+        zdot_mgr = zdot_body - s.q * x_mg * cos_tht + s.p * ( y_mg) * cos_phi * cos_tht
 
+        def apply_gear_force(x, y, z, fz_earth):
+            if fz_earth >= 0:
+                return
+            fx_b =  -fz_earth * sin_tht
+            fy_b =   fz_earth * sin_phi * cos_tht
+            fz_b =   fz_earth * cos_phi * cos_tht
             nonlocal gear_fx, gear_fy, gear_fz, gear_L, gear_M, gear_N
-            
-            
             gear_fx += fx_b
             gear_fy += fy_b
             gear_fz += fz_b
+            gear_L  += y * fz_b - z * fy_b
+            gear_M  += z * fx_b - x * fz_b
+            gear_N  += x * fy_b - y * fx_b
 
-            
-            gear_L += y * fz_b - z * fy_b
-            gear_M += z * fx_b - x * fz_b
-            gear_N += x * fy_b - y * fx_b
+        fz_total_earth = 0.0
 
-        # calculate forces
-        if z_earth_ng > 0:  
-            fz_ng_earth = -k_ng * z_earth_ng - c_ng * w_ng 
-            apply_gear_force(x_ng,  0.0,   z_gear, fz_ng_earth)
+        if z_earth_ng - ground > 0:
+            fz_ng_earth = -k_ng * z_earth_ng - c_ng * zdot_ng
+            apply_gear_force(x_ng, 0.0,  z_gear, fz_ng_earth)
+            fz_total_earth += abs(fz_ng_earth)
 
-        if z_earth_mg_left > 0:
-            fz_mgl_earth = -k_mg * z_earth_mg_left - c_mg * w_mgl
-            apply_gear_force(x_mg, -y_mg,  z_gear, fz_mgl_earth)
+        if z_earth_mg_left - ground > 0:
+            fz_mgl_earth = -k_mg * z_earth_mg_left - c_mg * zdot_mgl
+            apply_gear_force(x_mg, -y_mg, z_gear, fz_mgl_earth)
+            fz_total_earth += abs(fz_mgl_earth)
 
-        if z_earth_mg_right > 0:
-            fz_mgr_earth = -k_mg * z_earth_mg_right - c_mg * w_mgr
-            apply_gear_force(x_mg,  y_mg,  z_gear, fz_mgr_earth)
-        
+        if z_earth_mg_right - ground > 0:
+            fz_mgr_earth = -k_mg * z_earth_mg_right - c_mg * zdot_mgr
+            apply_gear_force(x_mg,  y_mg, z_gear, fz_mgr_earth)
+            fz_total_earth += abs(fz_mgr_earth)
+        mu_roll = 0.04
+        mu_brake = 0.0
+        mu_eff = mu_roll + mu_brake * (brake_cmd / max_brake)
+        friction_force = -mu_eff * fz_total_earth * np.sign(s.u)
+        gear_fx += friction_force * cos_tht
 
-        
-
-        # add to aero forces
         fx += gear_fx
-        fz += gear_fz
         fy += gear_fy
-        roll_moment += gear_L
+        fz += gear_fz
+        roll_moment  += gear_L
         pitch_moment += gear_M
-        yaw_moment += gear_N
+        yaw_moment   += gear_N
         
         dx = np.zeros(StateIndex.SIZE)
 
