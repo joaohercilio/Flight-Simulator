@@ -47,7 +47,7 @@ def make_state_eq(
 
         # --- atmosphere ---
         rho = atmosphere.get_density(s.altitude)
-        print(rho)
+        #rho = 1.0729
         g   = atmosphere.get_gravity(s.altitude)
 
         # --- airspeed and dynamic pressure ---
@@ -91,7 +91,11 @@ def make_state_eq(
         )
 
         # --- propulsion and braking ---
-        thrust = throttle_cmd*(0.0010482548 * speed**3 - 0.0715234262 * speed**2 - 0.7276455480 * speed + 44.085638000) * rho / 1.225
+        a=0.001274
+        b=-0.07204
+        c=-0.5428
+        d=40.89
+        thrust = throttle_cmd*(a * speed**3 +b * speed**2 +c * speed + d) * rho / 1.225
         #thrust = throttle_cmd
 
         fx = fx + thrust
@@ -158,18 +162,21 @@ def make_state_eq(
         fz_total_earth = 0.0
 
         if z_earth_ng - ground > 0:
-            fz_ng_earth = -k_ng * z_earth_ng - c_ng * zdot_ng
-            apply_gear_force(x_ng, 0.0,  z_gear, fz_ng_earth)
+            penetration_ng = z_earth_ng - ground
+            fz_ng_earth = -k_ng * penetration_ng - c_ng * zdot_ng
+            apply_gear_force(x_ng, 0.0, z_gear, fz_ng_earth)
             fz_total_earth += abs(fz_ng_earth)
 
         if z_earth_mg_left - ground > 0:
-            fz_mgl_earth = -k_mg * z_earth_mg_left - c_mg * zdot_mgl
+            penetration_mgl = z_earth_mg_left - ground
+            fz_mgl_earth = -k_mg * penetration_mgl - c_mg * zdot_mgl
             apply_gear_force(x_mg, -y_mg, z_gear, fz_mgl_earth)
             fz_total_earth += abs(fz_mgl_earth)
 
         if z_earth_mg_right - ground > 0:
-            fz_mgr_earth = -k_mg * z_earth_mg_right - c_mg * zdot_mgr
-            apply_gear_force(x_mg,  y_mg, z_gear, fz_mgr_earth)
+            penetration_mgr = z_earth_mg_right - ground
+            fz_mgr_earth = -k_mg * penetration_mgr - c_mg * zdot_mgr
+            apply_gear_force(x_mg, y_mg, z_gear, fz_mgr_earth)
             fz_total_earth += abs(fz_mgr_earth)
         mu_roll = 0.04
         mu_brake = 0.0

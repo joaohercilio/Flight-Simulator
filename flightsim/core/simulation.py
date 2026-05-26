@@ -67,6 +67,7 @@ def sample_and_save_loads(t, x, dx, t_start, t_end, filename="loads_data.csv"):
     return df
 
 
+
 def compute_trim(model, aero_db, g, V, rho):
     """
     Find trim (alpha, elevator, thrust) such that

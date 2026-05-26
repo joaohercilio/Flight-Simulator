@@ -96,7 +96,7 @@ def load_model(model_file: pathlib.Path) -> AircraftModel:
     propulsion = data.get("propulsion", {})
     control    = data.get("control_limits", {})
     tables_dir = model_file.parent / data["aero"]["tables_dir"]
-    ground_altitude = data.get("ground_altitude")
+    ground_altitude = data.get("ground_altitude", {}).get("alt", 0.0)
 
     return AircraftModel(
         mass=inertia["mass"],

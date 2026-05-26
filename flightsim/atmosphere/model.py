@@ -95,7 +95,7 @@ class ConstantAtmosphere(AtmosphereModel):
         self._density = density
         self._gravity = gravity
     @staticmethod
-    def get_density(self, altitude_m: float) -> float:
+    def get_density(altitude_m:int) -> float:
         
         H:float = 3.28*altitude_m
         return ((1-6.875E-6*H)**5.2561)/(1-6.875E-6*H)*1.225
