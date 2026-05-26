@@ -63,21 +63,16 @@ def make_state_eq(
     c_ng = 2.0 * 1.0 * np.sqrt(k_ng * (weight_ng_nominal / 9.81))
     c_mg = 2.0 * 1.0 * np.sqrt(k_mg * (weight_per_mg_nominal / 9.81))
 
-    # ---------------------------------------------------------------
-    # 2. Engine and Brake Configuration
-    # ---------------------------------------------------------------
+   
     arm_z_engine = model.arm_z_engine
     max_brake    = model.brake_max
     ground       = model.ground_altitude 
 
-    # Aerodynamic Reference Point (where wind tunnel tables are centered)
-    # Fallback to nominal if your TOML doesn't explicitly store x_ref/z_ref
+    
     x_ref = 0.3913
     z_ref = 0.315
 
-    # ---------------------------------------------------------------
-    # 3. Runtime State Equation Loop
-    # ---------------------------------------------------------------
+    
     def f(raw: NDArray, t: float) -> NDArray:
         s = StateVector(raw)
 
@@ -122,11 +117,7 @@ def make_state_eq(
             sin_beta, cos_beta,
         )
 
-        # --- Aerodynamic Reference Point Transformation (Transport Theorem) ---
-        # Accounts for the distance between actual flight CG and the aero reference center
-        dx_ref = x_ref - model.x_cg  
-        dz_ref = z_ref - model.z_cg  
-        pitch_moment += (dz_ref * fx - dx_ref * fz)
+        
 
         # --- Propulsion Forces ---
         a, b, c, d = 0.001274, -0.07204, -0.5428, 40.89
