@@ -12,7 +12,6 @@ from utils.io import load_model
 from flightsim.core.state_eq import make_state_eq
 from flightsim.core.integrator import rk4_step
 from flightsim.aero.database import AeroDatabase
-from flightsim.core.simulation import compute_trim
 from flightsim.core.state import StateIndex
 from utils.io import AircraftModel
 
@@ -31,27 +30,26 @@ _LAT0_DEG  = -23.2292
 _LON0_DEG  = -45.8615
 _LAT0      = np.radians(_LAT0_DEG)
 _LON0      = np.radians(_LON0_DEG)
-groundSJC  = -635.3
+
+groundSJC  = load_model(CASE_DIR / "aircraft_model.toml").ground_altitude
 PRINT_EACH = 60   
 
 # ---------------------------------------------------------------
 # Trim and Analysis Functions
 # ---------------------------------------------------------------
 def compute_climbing_trim(model, aero_db, atmosphere, g: float, V: float, altitude: float, throttle: float):
-    """Finds steady-state flight conditions (alpha, elevator, gamma) for a given state."""
-    rho = atmosphere.get_density(altitude)
+    """Solves for (alpha, elevator, gamma) for a given airspeed, altitude, and FIXED throttle."""
+    # Convert AGL to ASL for the atmosphere model (groundSJC is negative, so we subtract it)
+    true_asl_altitude = altitude - groundSJC 
+    rho = atmosphere.get_density(true_asl_altitude)
     dyn_pres = 0.5 * rho * V**2
     Sref = model.s
     
-    # Thrust polynomial adjusted by density altitude ratio
     a, b, c, d = 0.001274, -0.07204, -0.5428, 40.89
     thrust = throttle * (a * V**3 + b * V**2 + c * V + d) * rho / 1.225
 
     def residuals(x):
-        alpha_rad = x[0]
-        el_deg    = x[1]
-        gamma_rad = x[2]
-        
+        alpha_rad, el_deg, gamma_rad = x[0], x[1], x[2]
         theta_rad = alpha_rad + gamma_rad
 
         cl = aero_db.get_coeff("CL0", alpha_rad, 0.0) + aero_db.get_coeff("CL_el", alpha_rad, 0.0) * el_deg
@@ -82,47 +80,92 @@ def compute_climbing_trim(model, aero_db, atmosphere, g: float, V: float, altitu
     x_trim, info, ier, msg = fsolve(residuals, x0, full_output=True, xtol=1e-10)
 
     if ier != 1:
-        # If it completely fails to resolve forces, return a massive penalty climb rate
         return np.deg2rad(2.0), 0.0, np.deg2rad(-90.0), -999.0
 
-    alpha_trim = x_trim[0]
-    el_trim = x_trim[1]
-    gamma_trim = x_trim[2]
+    alpha_trim, el_trim, gamma_trim = x_trim[0], x_trim[1], x_trim[2]
     climb_rate = V * np.sin(gamma_trim)
 
     return alpha_trim, el_trim, gamma_trim, climb_rate
 
 
+def compute_level_trim(model, aero_db, atmosphere, g: float, V: float, altitude: float):
+    """Solves for (alpha, elevator, throttle) forcing gamma=0 (level flight) at a FIXED altitude."""
+    rho = atmosphere.get_density(altitude)
+    dyn_pres = 0.5 * rho * V**2
+    Sref = model.s
+    a, b, c, d = 0.001274, -0.07204, -0.5428, 40.89
+    
+    def residuals(x):
+        alpha_rad = x[0]
+        el_deg    = x[1]
+        throttle  = x[2]  # <--- Solving for throttle now
+        
+        theta_rad = alpha_rad  # Because gamma is locked to 0
+        
+        cl = aero_db.get_coeff("CL0", alpha_rad, 0.0) + aero_db.get_coeff("CL_el", alpha_rad, 0.0) * el_deg
+        cd = aero_db.get_coeff("CD0", alpha_rad, 0.0) + aero_db.get_coeff("CD_el", alpha_rad, 0.0) * el_deg
+        cm = aero_db.get_coeff("Cm0", alpha_rad, 0.0) + aero_db.get_coeff("Cm_el", alpha_rad, 0.0) * el_deg
+
+        lift = cl * dyn_pres * Sref
+        drag = cd * dyn_pres * Sref
+        pitch_moment = cm * dyn_pres * Sref * model.c
+
+        thrust = throttle * (a * V**3 + b * V**2 + c * V + d) * rho / 1.225
+
+        sin_a, cos_a = np.sin(alpha_rad), np.cos(alpha_rad)
+        fx_aero = -(drag * cos_a - lift * sin_a)
+        fz_aero = -(drag * sin_a + lift * cos_a)
+
+        fx_total = fx_aero + thrust
+        fz_total = fz_aero
+        pitch_total = pitch_moment + model.arm_z_engine * thrust
+
+        sin_tht, cos_tht = np.sin(theta_rad), np.cos(theta_rad)
+        
+        res_u = fx_total / model.mass - g * sin_tht
+        res_w = fz_total / model.mass + g * cos_tht
+        res_q = pitch_total / model.iy
+
+        return [res_u, res_w, res_q]
+
+    x0 = [np.deg2rad(2.0), 0.0, 0.5]  # Guess 50% throttle
+    x_trim, info, ier, msg = fsolve(residuals, x0, full_output=True, xtol=1e-10)
+
+    if ier != 1:
+        print(f"WARNING: Level trim failed to converge at {altitude}m — {msg}")
+
+    return x_trim[0], x_trim[1], x_trim[2]  # alpha_trim, el_trim, throttle_trim
+
+
 def estimate_cruise_altitude(model, aero_db, atmosphere, g, V_cruise, target_throttle=0.7):
-    """Sweeps altitudes to find where steady level flight (climb rate = 0) occurs at 70% throttle."""
-    alts = np.linspace(0, 6000, 200) # Slightly wider grid search 
+    """Sweeps altitudes to find the highest point level flight can be maintained."""
+    alts = np.linspace(0, 6000, 2000) 
     
     print(f"Sweeping altitudes at V = {V_cruise} m/s, Throttle Setting = {target_throttle}")
     print("-" * 60)
     
-    closest_cruise_alt = 0.0
+    best_alt, best_alpha, best_el, best_gamma = 0.0, 0.0, 0.0, 0.0
     
     for h in alts:
-        alpha, el, gamma, climb_rate = compute_climbing_trim(
+        alpha, el, gamma, climb_rate, = compute_climbing_trim(
             model, aero_db, atmosphere, g, V_cruise, h, target_throttle
         )
         
-        # Guardrails for geometric/aerodynamic stalls
         if abs(el) > 25.0 or np.rad2deg(alpha) > 15.0 or climb_rate == -999.0:
             print(f"  [{h:6.1f} m] Limits Exceeded (Aerodynamic / Trim failure)")
             break
             
-        print(f"  [{h:6.1f} m] Calculated excess climb capacity: {climb_rate:+.3f} m/s")
+        print(f"  [{h:6.1f} m] Excess climb capacity: {climb_rate:+.3f} m/s")
         
-        # When climb rate drops to or below 0, we have found our absolute cruise ceiling for this throttle
         if climb_rate <= 0.0:
-            closest_cruise_alt = h
-            print(f"\n>>> Level Flight Equilibrium Crossed near this altitude threshold!")
+            best_alt, best_alpha, best_el, best_gamma = h, alpha, el, gamma
+            print(f"\n>>> Level Flight Equilibrium Crossed near {h:.1f} meters!")
             break
             
-        closest_cruise_alt = h
+        # Store latest valid states if we haven't crossed yet
+        best_alt, best_alpha, best_el = h, alpha, el
             
-    return closest_cruise_alt
+    return best_alt, best_alpha, best_el, best_gamma
 
 
 # ---------------------------------------------------------------
@@ -186,27 +229,33 @@ class RCTransmitter:
         brake    = (self._joystick.get_axis(self._AXIS_BRAKE)    + 1.0) / 2.0
         return 25*ele, -20*ail, 30*rud, throttle, 0.0
 
+
+# ---------------------------------------------------------------
+# Decoupled Flight Simulator Bridge
+# ---------------------------------------------------------------
+
 class FlightGearBridge:
-    def __init__(self, case_dir: pathlib.Path, manual_control: bool = False, start_in_air: bool = False) -> None:
+    def __init__(self, case_dir: pathlib.Path, manual_control: bool = False, 
+                start_in_air: bool = True, start_alt: float = 50.0, V: float = 14.9, 
+                alpha_trim: float = 0.0, trim_elevator: float = 0.0, trim_throttle: float = 0.0, trim_gamma: float=0.0) -> None:
+        
         cfg   = SimConfig.from_toml_file(case_dir / "sim_config.toml")
         model = load_model(case_dir / "aircraft_model.toml")
         aero_db = AeroDatabase(model.aero_tables_dir)
 
         if start_in_air:
-            V = 14.9 
-            alpha_trim, trim_elevator, trim_throttle = compute_trim(
-                model, aero_db=aero_db, g=9.81, V=V, rho=1.1
-            )
-            trim_throttle = 1.0
+            # ---------------------------------------------------------
+            # AIRBORNE START: Override TOML with computed trim states
+            # ---------------------------------------------------------
             cfg.x0[StateIndex.U] = V * np.cos(alpha_trim)
             cfg.x0[StateIndex.W] = V * np.sin(alpha_trim)
-            cfg.x0[StateIndex.THETA] = alpha_trim
-            
-            if cfg.x0[StateIndex.Z_E] - groundSJC == 0:
-                cfg.x0[StateIndex.Z_E] = -50.0 + groundSJC  
+            cfg.x0[StateIndex.THETA] = alpha_trim + trim_gamma
+            cfg.x0[StateIndex.Z_E] = -start_alt + groundSJC
         else:
-            trim_elevator = 0.0
-            trim_throttle = 0.0
+            # ---------------------------------------------------------
+            # GROUND START: Use raw TOML states and zero out trim inputs
+            # ---------------------------------------------------------
+            pass
 
         if manual_control:
             self._transmitter = RCTransmitter()
@@ -217,6 +266,7 @@ class FlightGearBridge:
         self._dx = np.zeros_like(self._x)
         self._f  = make_state_eq(model, aero_db, self._transmitter.read, cfg.atmosphere)
         self._frame = 0
+
 
     def _callback(self, fdm_data, event_pipe):
         for _ in range(STEPS_PER_SEND):
@@ -278,37 +328,73 @@ if __name__ == "__main__":
     print("Initializing aircraft configurations for pre-flight analysis...")
     from flightsim.atmosphere.model import AtmosphereModel  
     
-    # Load environment datasets
     cfg = SimConfig.from_toml_file(CASE_DIR / "sim_config.toml")
     ac_model = load_model(CASE_DIR / "aircraft_model.toml")
     aero_database = AeroDatabase(ac_model.aero_tables_dir)
     atmos = cfg.atmosphere  
     
-    # Targets configuration matching user parameters
-    V_cruise = 14.9  # m/s
+    V_cruise = 14.9  # Target airspeed
     g_gravity = 9.81
-    target_throttle = 0.70
+    
+    # =========================================================
+    # MASTER SIMULATION TOGGLES
+    # =========================================================
+    START_IN_AIR = False         # False = Takeoff from TOML state. True = Spawn in air.
+    FIND_CRUISE_CEILING = False   # True = Sweep for ceiling. False = Level trim at fixed alt.
+    # =========================================================
     
     print("\n==================================================")
-    print(" RUNNING CRUISE ALTITUDE CALCULATION")
-    print("==================================================")
-    
-    cruise_altitude = estimate_cruise_altitude(
-        model=ac_model, 
-        aero_db=aero_database, 
-        atmosphere=atmos, 
-        g=g_gravity, 
-        V_cruise=V_cruise,
-        target_throttle=target_throttle
-    )
-    
-    print("==================================================")
-    print(f" ANALYSIS COMPLETE")
-    print(f" Target Speed: {V_cruise} m/s at {target_throttle*100:.0f}% Throttle")
-    print(f" Steady Cruise Altitude (Climb Rate = 0): {cruise_altitude:.2f} meters")
+    if FIND_CRUISE_CEILING:
+        print(" MODE: CRUISE ALTITUDE SWEEP")
+        target_throttle = 1.0
+        start_alt, trim_alpha, trim_ele, trim_gamma = estimate_cruise_altitude(
+            model=ac_model, aero_db=aero_database, atmosphere=atmos, 
+            g=g_gravity, V_cruise=V_cruise, target_throttle=target_throttle
+        )
+        trim_thr = target_throttle 
+        print(f" -> Resulting Altitude: {start_alt:.2f} m")
+        
+    else:
+        print(" MODE: FIXED LEVEL ALTITUDE TRIM")
+        start_alt = 1000.0  # Set your desired start altitude here
+        trim_alpha, trim_ele, trim_thr = compute_level_trim(
+            model=ac_model, aero_db=aero_database, atmosphere=atmos, 
+            g=g_gravity, V=V_cruise, altitude=start_alt
+        )
+        trim_gamma = 0.0  # FIX: Level flight means flight path angle is 0!
+        print(f" -> Altitude Locked: {start_alt:.2f} m")
+        print(f" -> Required Throttle: {trim_thr*100:.1f}%")
+        
     print("==================================================\n")
     
-    # Hand off to standard active hardware loops
-    print("Launching FlightGear bridge. Press Ctrl+C to stop.")
-    bridge = FlightGearBridge(CASE_DIR, manual_control=False, start_in_air=True)
+    if not START_IN_AIR:
+        print("\n[!] START_IN_AIR is False: Spawning on ground.")
+        # Override high-altitude trim with takeoff roll settings!
+        trim_alpha = 0.0
+        trim_ele = 0.0     # Neutral elevator (or set to slightly negative for rotation)
+        trim_thr = 1.0     # 100% Throttle for takeoff run
+        trim_gamma = 0.0
+        print(f" -> Overriding controls for takeoff run: Throttle={trim_thr*100:.0f}%")
+    else:
+        print("\n[!] START_IN_AIR is True: Spawning at computed altitude and speed.")
+        print(f"Computed Trim State:")
+        print(f"  Alpha:    {np.rad2deg(trim_alpha):.2f}°")
+        print(f"  Elevator: {trim_ele:.2f}°")
+        print(f"  Throttle: {trim_thr:.2f}")
+
+    print("Launching FlightGear bridge...")
+    
+    # Pass everything to the bridge
+    bridge = FlightGearBridge(
+        case_dir=CASE_DIR, 
+        manual_control=False, # Set to True if using RCTransmitter for the takeoff run!
+        start_in_air=START_IN_AIR,
+        start_alt=start_alt,
+        V=V_cruise,
+        alpha_trim=trim_alpha,
+        trim_elevator=trim_ele,
+        trim_throttle=trim_thr,
+        trim_gamma=trim_gamma
+    )
+    
     bridge.run()
