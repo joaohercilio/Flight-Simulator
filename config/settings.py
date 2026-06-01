@@ -35,6 +35,11 @@ class SimConfig:
     dt: float
     x0: NDArray
     atmosphere: AtmosphereModel
+    trim: bool
+    trim_condition: str
+    v_des: float
+    h_des: float
+    gamma_des: float 
     save_figures: bool
     plot_config: pathlib.Path
     output_dir: pathlib.Path
@@ -59,7 +64,13 @@ class SimConfig:
 
         model_file = config_dir / data["model"]["file"]
         plot_config = config_dir / plots.get("config_file", "C:/Users/enzo_/Documents/GitHub/Flight-Simulator/cases/mushu/plots.toml")
-
+        trim_section = data.get("trim", {})
+        do_trim = trim_section.get("trim_flight", False)
+        trim_conds = data.get("trimconditions", {})
+        trim_condition = trim_conds.get("mode", "steady_level_flight")
+        v_des = trim_conds.get("v_des", 15.0)
+        h_des = trim_conds.get("h_des", 700.0)
+        gamma_des = trim_conds.get("gamma_des", 0.0)
         x0 = StateVector.from_dict(data["initial_condition"]).to_array()
 
         return cls(
@@ -69,6 +80,11 @@ class SimConfig:
             dt=sim["dt"],
             x0=x0,
             atmosphere=AtmosphereModel.from_dict(data.get("atmosphere", {})),
+            trim = do_trim,
+            trim_condition = trim_condition,
+            v_des = v_des,
+            h_des = h_des,
+            gamma_des = gamma_des,
             plot_config=plot_config,
             save_figures=plots.get("save_figures", False),
             output_dir=config_dir / plots.get("output_dir", "results/"),

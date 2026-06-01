@@ -67,95 +67,10 @@ def sample_and_save_loads(t, x, dx, t_start, t_end, filename="loads_data.csv"):
     return df
 
 
-
-def compute_trim(model, aero_db, g, V, rho):
-    """
-    Find trim (alpha, elevator, thrust) such that
-    u_dot = w_dot = q_dot = 0 at straight and level flight.
-    
-    Returns alpha_trim (rad), elevator_trim (deg), thrust_trim (N)
-    """
-    
-    W   = model.mass * g
-    Sref = model.s
-    dyn_pres = 0.5 * rho * V**2
-
-    def residuals(x):
-        alpha_rad = x[0]
-        el_deg    = x[1]
-        thrust    = x[2]
-
-        u = V * np.cos(alpha_rad)
-        w = V * np.sin(alpha_rad)
-
-        half_c_v = model.c / (2 * V)
-
-        # Aero coefficients at trim (p=q=r=0, beta=0)
-        cl = (aero_db.get_coeff("CL0",  alpha_rad, 0.0)
-            + aero_db.get_coeff("CL_el", alpha_rad, 0.0) * el_deg)
-        cd = (aero_db.get_coeff("CD0",  alpha_rad, 0.0)
-            + aero_db.get_coeff("CD_el", alpha_rad, 0.0) * el_deg)
-        cm = (aero_db.get_coeff("Cm0",  alpha_rad, 0.0)
-            + aero_db.get_coeff("Cm_el", alpha_rad, 0.0) * el_deg)
-        # q=0 so no Cmq term
-
-        lift = cl * dyn_pres * Sref
-        drag = cd * dyn_pres * Sref
-        pitch_moment = cm * dyn_pres * Sref * model.c
-
-        # Wind to body axis forces
-        sin_a, cos_a = np.sin(alpha_rad), np.cos(alpha_rad)
-        fx_aero = -(drag * cos_a - lift * sin_a)
-        fz_aero = -(drag * sin_a + lift * cos_a)
-
-        # Thrust along body x-axis
-        fx_total = fx_aero + thrust
-        fz_total = fz_aero
-
-        # Pitch moment from thrust arm
-        pitch_total = pitch_moment + model.arm_z_engine * thrust
-
-        # Trim residuals: u_dot=0, w_dot=0, q_dot=0
-        # translational (gravity projected into body axes, theta=alpha at trim)
-        sin_tht, cos_tht = sin_a, cos_a   # theta = alpha in level flight
-        res_u = fx_total / model.mass - g * sin_tht          # u_dot = 0
-        res_w = fz_total / model.mass + g * cos_tht          # w_dot = 0
-        res_q = pitch_total / model.iy                        # q_dot = 0
-
-        return [res_u, res_w, res_q]
-
-    # Initial guess from AVL or rough estimate
-    alpha0   = np.deg2rad(2.0)
-    el0      = 2.0          # deg
-    thrust0  = W            # rough: thrust ~ weight for slow UAV
-
-    x_trim, info, ier, msg = fsolve(
-        residuals,
-        x0=[alpha0, el0, thrust0],
-        full_output=True,
-        xtol=1e-10,
-        
-    )
-
-    if ier != 1:
-        print(f"WARNING: trim did not converge — {msg}")
-
-    alpha_trim  = x_trim[0]
-    el_trim     = x_trim[1]
-    thrust_trim = x_trim[2]
-
-    res = residuals(x_trim)
-    print(f"\n── Trim solution ──────────────────────────────")
-    print(f"  α_trim    = {np.rad2deg(alpha_trim):.4f} °")
-    print(f"  δe_trim   = {el_trim:.4f} °")
-    print(f"  T_trim    = {thrust_trim:.4f} N")
-    print(f"  Residuals : u_dot={res[0]:.2e}  w_dot={res[1]:.2e}  q_dot={res[2]:.2e}")
-
-    return alpha_trim, el_trim, thrust_trim
-
 def run_simulation(
     model: AircraftModel,
     x0: NDArray,
+    trim_controls: dict[str, float],
     t_start: float,
     t_end: float,
     dt: float,
@@ -182,31 +97,15 @@ def run_simulation(
 
     x  = np.zeros((12, n))
     dx = np.zeros((12, n))
-
-    V = 22.4
-
-    alpha_trim, elevator_trim, thrust_trim = compute_trim(
-        model,
-        aero_db=AeroDatabase(model.aero_tables_dir),
-        g=9.81,
-        V=V,
-        rho=1.1
-        )
-
-
-
-    x0[StateIndex.U] = V *np.cos(alpha_trim)
-    x0[StateIndex.W] = V *np.sin(alpha_trim)
-    x0[StateIndex.THETA] = alpha_trim
-    
-
     x[:, 0] = x0
 
     aero_db = AeroDatabase(model.aero_tables_dir)
 
+    elevator_trim, aileron_trim, rudder_trim, throttle_trim = trim_controls["elevator"], trim_controls["aileron"], trim_controls["rudder"], trim_controls["throttle"]
+
     ail_start   = 5.0
     ail_end     = 6.0
-    ail_deflect = 2 #4.821695697645064*0
+    ail_deflect = 2*0 #4.821695697645064*0
 
     ele_start   = 5.0
     ele_mid     = 6.0
@@ -228,10 +127,10 @@ def run_simulation(
         else:
             ele = elevator_trim"""
         ele = elevator_trim + ele_deflect if ele_start <= current_t <= ele_end else elevator_trim
-        ail = ail_deflect if ail_start <= current_t <= ail_end else 0.0
-        rud = rud_deflect if rud_start <= current_t <= rud_end else 0.0
+        ail = ail_deflect + aileron_trim if ail_start <= current_t <= ail_end else 0.0
+        rud = rud_deflect + rudder_trim if rud_start <= current_t <= rud_end else 0.0
 
-        return ele, ail, rud, thrust_trim, 0.0
+        return ele, ail, rud, throttle_trim, 0.0
 
     f = make_state_eq(model, aero_db, timed_control, atmosphere)
 

@@ -13,6 +13,17 @@ model   = "constant"
 density = 1.1        # kg/m^3
 gravity = 9.81         # m/s^2
 
+[trim]
+# conditional check
+trim_flight = true
+
+[trimconditions]
+# if trimmed, how?
+mode = "steady_level_flight"
+v_des = 16.2 
+h_des = 700
+gamma_des = 0.0
+
 [initial_condition]
 # Velocity body axis (m/s)
 u = 0.0
