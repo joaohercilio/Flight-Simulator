@@ -110,11 +110,13 @@ def run_simulation(
     ele_start   = 5.0
     ele_mid     = 6.0
     ele_end     = 6.0
-    ele_deflect = -25*0
+    ele_deflect = -2.0*0
 
     rud_start = 5.0
-    rud_end = 6.0
-    rud_deflect = 20.0*0
+    rud_end = 5.1
+    rud_deflect = 10.0*0
+
+    
 
     current_t = t_start
 
@@ -127,14 +129,17 @@ def run_simulation(
         else:
             ele = elevator_trim"""
         ele = elevator_trim + ele_deflect if ele_start <= current_t <= ele_end else elevator_trim
-        ail = ail_deflect + aileron_trim if ail_start <= current_t <= ail_end else 0.0
-        rud = rud_deflect + rudder_trim if rud_start <= current_t <= rud_end else 0.0
+        ail = ail_deflect + aileron_trim if ail_start <= current_t <= ail_end else aileron_trim
+        rud = rud_deflect + rudder_trim if rud_start <= current_t <= rud_end else rudder_trim
 
         return ele, ail, rud, throttle_trim, 0.0
 
     f = make_state_eq(model, aero_db, timed_control, atmosphere)
-
+    
+    
     xi  = x0.copy()
+    
+
     dxi = np.zeros(12)
 
     for i in range(n - 1):

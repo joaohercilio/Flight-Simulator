@@ -119,6 +119,59 @@ def load_model(model_file: pathlib.Path) -> AircraftModel:
         ground_altitude=ground_altitude,
     )
 
+def _plot_trajectory_3d(
+    position_data: list[tuple[str, NDArray]],
+    output_dir: pathlib.Path | None,
+    save_figures: bool,
+    fig_index: int,
+) -> None:
+    """Renders a 3D trajectory plot from position data.
+    
+    Args:
+        position_data: List of (label, data) tuples for North, East, Altitude.
+        output_dir: Directory to save figures.
+        save_figures: Whether to save to disk.
+        fig_index: Figure number for file naming.
+    """
+    north = position_data[0][1]
+    east = position_data[1][1]
+    altitude = position_data[2][1]
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    ax.plot(east, north, altitude, label="Flight Path", color="#1f77b4", linewidth=1.5)
+    ax.scatter(east[0], north[0], altitude[0], color="green", marker="o", s=40, label="Start")
+    ax.scatter(east[-1], north[-1], altitude[-1], color="red", marker="x", s=40, label="End")
+
+    ax.set_xlabel("East [m]", fontsize=9, labelpad=10)
+    ax.set_ylabel("North [m]", fontsize=9, labelpad=10)
+    ax.set_zlabel("Altitude [m]", fontsize=9, labelpad=10)
+    ax.set_title("3D Aircraft Trajectory", fontsize=12, pad=20)
+    
+    ax.tick_params(labelsize=8)
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend()
+
+    min_span = 10.0 
+    
+    for data, set_lim_func in [
+        (east, ax.set_xlim),
+        (north, ax.set_ylim),
+        (altitude, ax.set_zlim),
+    ]:
+        d_min, d_max = np.min(data), np.max(data)
+        if (d_max - d_min) < min_span:
+            center = (d_max + d_min) / 2.0
+            set_lim_func(center - min_span / 2.0, center + min_span / 2.0)
+
+    if save_figures and output_dir is not None:
+        plt.savefig(
+            output_dir / f"fig_{fig_index+1:02d}_trajectory_3d.png", 
+            dpi=150, 
+            bbox_inches="tight"
+        )
+
 def _build_plot_groups(
     x: NDArray,
     dx: NDArray,
@@ -254,6 +307,28 @@ def _plot_figure(
                 ax.set_xlabel("Time [s]", fontsize=8)
                 ax.tick_params(labelsize=7)
                 ax.grid(True, linestyle="--", alpha=0.5)
+                
+                y_min, y_max = np.min(data), np.max(data)
+                y_span = y_max - y_min
+                
+                
+                label_lower = label.lower()
+                if "deg/s" in label_lower:
+                    min_span = 2.0  
+                elif "deg" in label_lower:
+                    min_span = 2.0   
+                elif "m/s" in label_lower:
+                    min_span = 1.0   
+                elif "[m]" in label_lower:
+                    min_span = 10.0  
+                else:
+                    min_span = 1.0   
+                
+            
+                if y_span < min_span:
+                    y_center = (y_max + y_min) / 2.0
+                    ax.set_ylim(y_center - min_span / 2.0, y_center + min_span / 2.0)
+                
             else:
                 ax.axis("off")
 
@@ -282,6 +357,14 @@ def generate_plots(
     figures = _load_plot_config(plot_config)
 
     for i, group_names in enumerate(figures):
+
+        if "Trajectory 3D" in group_names:
+            _plot_trajectory_3d(groups["Position"], output_dir, save_figures, i)
+
+            group_names = [g for g in group_names if g != "Trajectory 3D"]
+            if not group_names:
+                continue
+
         _plot_figure(t, groups, group_names)
 
         if save_figures:

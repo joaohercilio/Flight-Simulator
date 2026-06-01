@@ -2,7 +2,7 @@
 
 [simulation]
 t_start = 0.0
-t_end   = 10.0
+t_end   = 15.0
 dt      = 0.01
 
 [model]
@@ -18,15 +18,16 @@ gravity = 9.81         # m/s^2
 trim_flight = true
 
 [trimconditions]
-# if trimmed, how?
-mode = "steady_level_flight"
-v_des = 16.2 
-h_des = 700
-gamma_des = 0.0
+# if trimmed, how?  steady_level_flight, coordinated_turn, steady_climb, glide, turn
+mode = "steady_climb"   
+v_des = 12.0
+h_des = 800
+gamma_des = -5.0 #negative angle for descent
+#radiusdes = 35.0
 
 [initial_condition]
 # Velocity body axis (m/s)
-u = 0.0
+u = 10.0
 v = 0.0
 w = 0.0
 
@@ -38,7 +39,7 @@ psi  = -0.78539816339744830961566084581988
 # Ned positions (m)
 x_e = 0.0
 y_e = 0.0
-z_e = -635.6 #if checking takeoff, use airport ground altitude
+z_e = -800 #if checking takeoff, use airport ground altitude
 
 # Angular rates (rad/s)
 p = 0.0

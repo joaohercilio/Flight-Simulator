@@ -39,7 +39,8 @@ class SimConfig:
     trim_condition: str
     v_des: float
     h_des: float
-    gamma_des: float 
+    gamma_des: float
+    radiusdes: float 
     save_figures: bool
     plot_config: pathlib.Path
     output_dir: pathlib.Path
@@ -71,6 +72,7 @@ class SimConfig:
         v_des = trim_conds.get("v_des", 15.0)
         h_des = trim_conds.get("h_des", 700.0)
         gamma_des = trim_conds.get("gamma_des", 0.0)
+        radiusdes = trim_conds.get("radiusdes", None)
         x0 = StateVector.from_dict(data["initial_condition"]).to_array()
 
         return cls(
@@ -85,6 +87,7 @@ class SimConfig:
             v_des = v_des,
             h_des = h_des,
             gamma_des = gamma_des,
+            radiusdes = radiusdes,
             plot_config=plot_config,
             save_figures=plots.get("save_figures", False),
             output_dir=config_dir / plots.get("output_dir", "results/"),

@@ -25,11 +25,15 @@ def main() -> None:
         x0, trim_controls = trim_opt(
             cfg.v_des, 
             cfg.h_des, 
-            cfg.gamma_des, 
+            cfg.gamma_des,
+            cfg.radiusdes, 
             cfg.atmosphere, 
             model, 
             condition=cfg.trim_condition
         )
+        print("Trim optimization complete. Initial conditions and control inputs:")
+        #print(f"  Initial state: {x0}")
+        print(f"  Elevator: {trim_controls['elevator']:.4f}, Aileron: {trim_controls['aileron']:.4f}, Rudder: {trim_controls['rudder']:.4f}, Throttle: {trim_controls['throttle']:.4f}, Brake: {trim_controls['brake']:.4f}")
     else:
         print("Bypassing trim optimization. Using manual initial conditions.")
         x0 = cfg.x0

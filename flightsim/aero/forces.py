@@ -33,7 +33,7 @@ def aerodynamic_force_body(
     """
     fx = -(drag * cos_alpha * cos_beta - lift * sin_alpha + side * cos_alpha * sin_beta)
     fy = -(drag * sin_beta) + side * cos_beta
-    fz = -(drag * sin_alpha * cos_beta - side * sin_alpha * sin_beta + lift * cos_alpha)
+    fz = -(drag * sin_alpha * cos_beta + side * sin_alpha * sin_beta + lift * cos_alpha)
     return fx, fy, fz
 
 
