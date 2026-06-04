@@ -32,6 +32,9 @@ _LON0_DEG = -45.8615
 _LAT0     = np.radians(_LAT0_DEG)
 _LON0     = np.radians(_LON0_DEG)
 
+elmax = load_model(CASE_DIR / "aircraft_model.toml").elevator_max
+ailmax = load_model(CASE_DIR / "aircraft_model.toml").aileron_max
+rudmax = load_model(CASE_DIR / "aircraft_model.toml").rudder_max
 groundSJC  = load_model(CASE_DIR / "aircraft_model.toml").ground_altitude
 PRINT_EACH = 60
 
@@ -243,7 +246,7 @@ class RCTransmitter:
         rud = self._joystick.get_axis(self._AXIS_RUDDER)
         throttle = (self._joystick.get_axis(self._throttle_axis) + 1.0) / 2.0
 
-        return 25 * ele, -20 * ail, 30 * rud, throttle, 0.0
+        return elmax * ele, -ailmax * ail, rudmax * rud, throttle, 0.0
 
 
 # ---------------------------------------------------------------

@@ -4,10 +4,10 @@
 # Inertia
 [inertia]
 mass = 10.54  # kg      — total mass
-Ix   = 0.19455600792   # kg.m^2  — roll moment of inertia
-Iy   = 0.42736474112   # kg.m^2  — pitch moment of inertia
-Iz   = 0.52497208636   # kg.m^2  — yaw moment of inertia
-Ixz  = 0.09489697883      # kg.m^2  — product of inertia (0 for symmetric aircraft)
+Ix   = 0.19455601   # kg.m^2  — roll moment of inertia
+Iy   = 0.42736474   # kg.m^2  — pitch moment of inertia
+Iz   = 0.52497209   # kg.m^2  — yaw moment of inertia
+Ixz  = 0.09489698      # kg.m^2  — product of inertia (0 for symmetric aircraft)
 x_cg = 0.3913
 y_cg = 0.0
 z_cg = 0.315

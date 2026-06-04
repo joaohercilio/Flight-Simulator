@@ -20,8 +20,8 @@ trim_flight = true
 [trimconditions]
 # if trimmed, how?  steady_level_flight, coordinated_turn, steady_climb, glide, turn
 mode = "coordinated_turn"   
-v_des = 12.0
-h_des = 800
+v_des = 13.0
+h_des = 800.0
 gamma_des = -10.0 #negative angle for descent
 radiusdes = 35.0
 
@@ -34,12 +34,12 @@ w = 0.0
 # atitude (rad)
 phi = 0.0
 theta = 0.0
-psi  = -0.78539816339744830961566084581988
+psi  = -0.79
 
 # Ned positions (m)
 x_e = 0.0
 y_e = 0.0
-z_e = -800 #if checking takeoff, use airport ground altitude
+z_e = -800.0 #if checking takeoff, use airport ground altitude
 
 # Angular rates (rad/s)
 p = 0.0

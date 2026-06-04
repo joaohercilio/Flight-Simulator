@@ -2,9 +2,9 @@
 
 find_cruise_ceiling = false
 
-start_in_air = true
+start_in_air = false
 
-start_trimmed = true
+start_trimmed = false
 
 manual_control = false
 
