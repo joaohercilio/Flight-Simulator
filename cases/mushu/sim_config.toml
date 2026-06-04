@@ -19,11 +19,11 @@ trim_flight = true
 
 [trimconditions]
 # if trimmed, how?  steady_level_flight, coordinated_turn, steady_climb, glide, turn
-mode = "steady_climb"   
+mode = "coordinated_turn"   
 v_des = 12.0
 h_des = 800
-gamma_des = -5.0 #negative angle for descent
-#radiusdes = 35.0
+gamma_des = -10.0 #negative angle for descent
+radiusdes = 35.0
 
 [initial_condition]
 # Velocity body axis (m/s)
