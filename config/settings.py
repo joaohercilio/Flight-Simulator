@@ -40,7 +40,7 @@ class SimConfig:
     v_des: float
     h_des: float
     gamma_des: float
-    radiusdes: float 
+    radiusdes: float | None 
     save_figures: bool
     plot_config: pathlib.Path
     output_dir: pathlib.Path

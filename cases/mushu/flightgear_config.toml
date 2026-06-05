@@ -1,11 +1,6 @@
 [flightgear]
-
 find_cruise_ceiling = false
-
 start_in_air = false
-
 start_trimmed = false
-
 manual_control = false
-
 throttleceiling = 0.7

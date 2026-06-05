@@ -6,76 +6,50 @@ import sys
 import pathlib
 import re
 import subprocess
+import tomllib
+import tomli_w
 
 
 def process_toml_file(file_path, ui_map, mode="load"):
     """Reads/Writes multi-section TOML files securely via regex sub-scoping."""
-    if mode == "load" and not file_path.exists():
-        return
-        
-    if mode == "save" and not file_path.exists():
-        content = ""
-    else:
-        with open(file_path, "r", encoding="utf-8") as f: 
-            content = f.read()
+    if mode == "load":
+        if not file_path.exists():
+            return
+        with open(file_path, "rb") as f:
+            data = tomllib.load(f)
 
-    for composite_key, (widget, val_type) in ui_map.items():
-        section, key = composite_key.split('.')
-        section_pattern = rf'(\[{section}\][^\[]*)'
-        sec_match = re.search(section_pattern, content)
-
-        if mode == "load":
-            if sec_match:
-                sec_block = sec_match.group(1)
+        for composite_key, (widget, val_type) in ui_map.items():
+                section, key = composite_key.split('.')
+                value = data.get(section, {}).get(key)
+                if value is None:
+                    continue
                 if val_type == "num":
-                    m = re.search(rf'^\s*{key}\s*=\s*([\d\.-]+)', sec_block, re.MULTILINE)
-                    if m: widget.setValue(float(m.group(1)))
+                    widget.setValue(float(value))
                 elif val_type == "str":
-                    m = re.search(rf'^\s*{key}\s*=\s*"([^"]*)"', sec_block, re.MULTILINE)
-                    if m:
-                        if isinstance(widget, QComboBox): widget.setCurrentText(m.group(1))
-                        else: widget.setText(m.group(1))
+                    if isinstance(widget, QComboBox): widget.setCurrentText(value)
+                    else: widget.setText(value)
                 elif val_type == "bool":
-                    m = re.search(rf'^\s*{key}\s*=\s*(true|false)', sec_block, re.MULTILINE | re.IGNORECASE)
-                    if m: widget.setChecked(m.group(1).lower() == "true")
+                    widget.setChecked(bool(value))
         
-        elif mode == "save":
-            if sec_match:
-                sec_block = sec_match.group(1)
-                if val_type == "num":
-                    pattern = rf'(^\s*{key}\s*=\s*)[\d\.-]+'
-                    if re.search(pattern, sec_block, re.MULTILINE):
-                        new_sec = re.sub(pattern, rf'\g<1>{widget.value()}', sec_block, flags=re.MULTILINE)
-                    else:
-                        new_sec = sec_block.rstrip() + f"\n{key} = {widget.value()}\n"
-                elif val_type == "str":
-                    val = widget.currentText() if isinstance(widget, QComboBox) else widget.text()
-                    pattern = rf'(^\s*{key}\s*=\s*)"[^"]*"'
-                    if re.search(pattern, sec_block, re.MULTILINE):
-                        new_sec = re.sub(pattern, rf'\g<1>"{val}"', sec_block, flags=re.MULTILINE)
-                    else:
-                        new_sec = sec_block.rstrip() + f'\n{key} = "{val}"\n'
-                elif val_type == "bool":
-                    val_str = str(widget.isChecked()).lower()
-                    pattern = rf'(^\s*{key}\s*=\s*)(true|false)'
-                    if re.search(pattern, sec_block, re.MULTILINE | re.IGNORECASE):
-                        new_sec = re.sub(pattern, rf'\g<1>{val_str}', sec_block, flags=re.MULTILINE | re.IGNORECASE)
-                    else:
-                        new_sec = sec_block.rstrip() + f"\n{key} = {val_str}\n"
-                
-                content = content.replace(sec_block, new_sec)
-            else:
-                content = content.rstrip() + f"\n\n[{section}]\n"
-                if val_type == "num": content += f"{key} = {widget.value()}\n"
-                elif val_type == "str":
-                    val = widget.currentText() if isinstance(widget, QComboBox) else widget.text()
-                    content += f'{key} = "{val}"\n'
-                elif val_type == "bool": content += f"{key} = {str(widget.isChecked()).lower()}\n"
+    elif mode == "save":
+        data = {}
+        if file_path.exists():
+            with open(file_path, "rb") as f:
+                data = tomllib.load(f)
+        for composite_key, (widget, val_type) in ui_map.items():
+            section, key = composite_key.split('.')
+            data.setdefault(section, {})
+            if val_type == "num":
+                data[section][key] = widget.value()
+            elif val_type == "str":
+                data[section][key] = widget.currentText() if isinstance(widget, QComboBox) else widget.text()
+            elif val_type == "bool":
+                data[section][key] = widget.isChecked()
 
-    if mode == "save":
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_path, "w", encoding="utf-8") as f: 
-            f.write(content)
+
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(file_path, "wb") as f:
+        tomli_w.dump(data, f)
 
 
 
@@ -369,7 +343,7 @@ class RunWindow(QWidget):
 
         
         nav_layout = QHBoxLayout()
-        btn_back = QPushButton("⬅ Back to Design Matrix")
+        btn_back = QPushButton("Back to Design Matrix")
         btn_back.setStyleSheet("padding: 8px; background-color: #616161; color: white; font-weight: bold;")
         btn_back.clicked.connect(self.go_back)
         nav_layout.addWidget(btn_back)

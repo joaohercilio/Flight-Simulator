@@ -1,52 +1,41 @@
-# sim_config.toml
-
 [simulation]
 t_start = 0.0
-t_end   = 15.0
-dt      = 0.01
+t_end = 15.0
+dt = 0.01
 
 [model]
 file = "data/aircraft_model.dat"
 
 [atmosphere]
-model   = "constant"
-density = 1.1        # kg/m^3
-gravity = 9.81         # m/s^2
+model = "constant"
+density = 1.1
+gravity = 9.81
 
 [trim]
-# conditional check
 trim_flight = true
 
 [trimconditions]
-# if trimmed, how?  steady_level_flight, coordinated_turn, steady_climb, glide, turn
-mode = "coordinated_turn"   
+mode = "coordinated_turn"
 v_des = 13.0
 h_des = 800.0
-gamma_des = -10.0 #negative angle for descent
+gamma_des = -10.0
 radiusdes = 35.0
 
 [initial_condition]
-# Velocity body axis (m/s)
 u = 10.0
 v = 0.0
 w = 0.0
-
-# atitude (rad)
 phi = 0.0
 theta = 0.0
-psi  = -0.79
-
-# Ned positions (m)
+psi = -0.79
 x_e = 0.0
 y_e = 0.0
-z_e = -800.0 #if checking takeoff, use airport ground altitude
-
-# Angular rates (rad/s)
+z_e = -800.0
 p = 0.0
 q = 0.0
 r = 0.0
 
 [plots]
 save_figures = true
-output_dir   = "results/"
-show_gui     = true
+output_dir = "results/"
+show_gui = true
