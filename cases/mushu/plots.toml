@@ -1,7 +1,4 @@
 # Automatically generated plots layout structure
 
 [[figure]]
-groups = ["Euler angles", "Euler rates", "Angular velocity"]
-
-[[figure]]
 groups = ["Trajectory 3D"]

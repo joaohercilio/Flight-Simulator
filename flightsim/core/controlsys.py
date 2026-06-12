@@ -233,7 +233,51 @@ def trim_opt(Vdes, hdes, gammades, radiusdes, atmosphere: AtmosphereModel, model
     
     elif condition == "glide":
         def glide(guess):
-            pass
+            alpha, delta_e, theta = guess
+            phi, psi = 0.0, 0.0
+            throttle = 0.0
+            u = Vdes*np.cos(alpha)
+            w = Vdes*np.sin(alpha)
+            v = 0.0
+            p,q,r = 0.0, 0.0, 0.0
+            x = np.zeros(12)
+            x[StateIndex.U] = u
+            
+            x[StateIndex.W] = w
+            
+            x[StateIndex.THETA] = theta
+            x[StateIndex.Z_E] = -hdes
+            controls = lambda: (delta_e, 0.0, 0.0, throttle, 0.0) #ele, ail, rud, thr, brk
+            f_eq = make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
+            dx_dt = f_eq(x, 0.0)
+            u_dot = dx_dt[StateIndex.U]
+            v_dot = dx_dt[StateIndex.V]
+            w_dot = dx_dt[StateIndex.W]
+            p_dot = dx_dt[StateIndex.P]
+            q_dot = dx_dt[StateIndex.Q]
+            r_dot = dx_dt[StateIndex.R]
+            J = u_dot**2 + v_dot**2 + w_dot**2 + p_dot**2 + q_dot**2 + r_dot**2
+            return J
+        guess = np.array([0.1, 0.0, 0.0])
+        bounds = [(np.deg2rad(-10.0), np.deg2rad(15.0)), (-25.0, 25.0), (np.deg2rad(-30.0), np.deg2rad(30.0))]
+        res = minimize(glide, guess, method='SLSQP', bounds=bounds, tol=1e-11)
+        print(f"Final Cost (J): {res.fun}")
+        if not res.success:
+            raise RuntimeError(f"Coordinated turn trim failed: {res.message}")
+        alpha_trim, delta_e_trim, theta_trim = res.x
+        initcond = np.zeros(12)
+        initcond[StateIndex.U] = Vdes * np.cos(alpha_trim)
+        initcond[StateIndex.W] = Vdes * np.sin(alpha_trim)
+        initcond[StateIndex.THETA] = theta_trim
+        initcond[StateIndex.Z_E] = -hdes
+        trim_controls = {
+            "elevator": delta_e_trim,
+            "aileron": 0.0,
+            "rudder": 0.0,
+            "throttle": 0.0,
+            "brake": 0.0
+        }
+        return initcond, trim_controls
     elif condition == "turn":
         def turn(guess):
             pass

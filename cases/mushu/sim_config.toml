@@ -15,10 +15,10 @@ gravity = 9.81
 trim_flight = true
 
 [trimconditions]
-mode = "coordinated_turn"
-v_des = 13.0
+mode = "glide"
+v_des = 12.0
 h_des = 800.0
-gamma_des = -10.0
+gamma_des = 0.0
 radiusdes = 35.0
 
 [initial_condition]
