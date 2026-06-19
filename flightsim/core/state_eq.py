@@ -76,8 +76,25 @@ def make_state_eq(
     z_ref = 0.315
 
     
+    gust = {
+        "amp": 0.0, "dir": 0.0, "dirz": 0.0,
+        "start": 0.0, "duration": 1.0,
+        "next": 2.0,
+    }
+
+    def tick_gust(t):
+        
+        if t > gust["next"]:
+            gust["amp"]      = np.random.uniform(0.0, 6.0)
+            gust["dir"]      = np.random.uniform(0.0, 2 * np.pi)
+            gust["dirz"]     = np.random.uniform(-np.pi, np.pi)
+            gust["duration"] = np.random.uniform(1.0, 5.0)
+            gust["start"]    = t
+            gust["next"]     = t + np.random.uniform(2.0, 4.0)
+
+    
     def f(raw: NDArray, t: float) -> NDArray:
-        nonlocal gust_amp, gust_dir, gust_duration, gust_start, next_gust, gust_dirz
+        
         s = StateVector(raw)
         # --- Trig Pre-computation ---
         sin_phi, cos_phi = np.sin(s.phi), np.cos(s.phi)
@@ -85,26 +102,14 @@ def make_state_eq(
         tan_tht          = np.tan(s.theta)
         sin_psi, cos_psi = np.sin(s.psi), np.cos(s.psi)
         
-        if t > next_gust:
-            gust_amp = np.random.uniform(9.0, 16.0)
-            gust_dir = np.random.uniform(0.0, 2*np.pi)
-            gust_dirz = np.random.uniform(-np.pi, np.pi)
-            gust_duration = np.random.uniform(1.0, 5.0)
-            gust_start = t
-            next_gust = t+np.random.uniform(5.0, 20.0)
-            print(
-            f"NEW GUST: "
-            f"A={gust_amp:.1f}, "
-            f"dir={np.rad2deg(gust_dir):.0f}"
-        )
-        tau = t-gust_start
-        if 0 <= tau <= gust_duration:
-            env = np.sin(np.pi*tau/gust_duration) **2
+        tau = t-gust["start"]
+        if 0 <= tau <= gust["duration"]:
+            env = np.sin(np.pi*tau/gust["duration"]) **2
         else:
             env = 0.0
-        wx = gust_amp*env*np.cos(gust_dir)*np.cos(gust_dirz)
-        wy = gust_amp*env*np.cos(gust_dirz)*np.sin(gust_dir)
-        wz = gust_amp*env*np.sin(gust_dirz)
+        wx = gust["amp"]*env*np.cos(gust["dir"])*np.cos(gust["dirz"])
+        wy = gust["amp"]*env*np.cos(gust["dirz"])*np.sin(gust["dir"])
+        wz = gust["amp"]*env*np.sin(gust["dirz"])
 
         Cbn = np.array([
         [
@@ -269,4 +274,4 @@ def make_state_eq(
 
         return dx
 
-    return f
+    return f, tick_gust

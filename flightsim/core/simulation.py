@@ -134,7 +134,7 @@ def run_simulation(
 
         return ele, ail, rud, throttle_trim, 0.0
 
-    f = make_state_eq(model, aero_db, timed_control, atmosphere)
+    f, tick_gust = make_state_eq(model, aero_db, timed_control, atmosphere)
     
     
     xi  = x0.copy()
@@ -144,7 +144,8 @@ def run_simulation(
 
     for i in range(n - 1):
         current_t = t[i]
-        rk4_step(f, xi, dxi, dt)
+        tick_gust(current_t)
+        rk4_step(current_t, f, xi, dxi, dt)
         x[:, i + 1] = xi
         dx[:, i]    = dxi
 

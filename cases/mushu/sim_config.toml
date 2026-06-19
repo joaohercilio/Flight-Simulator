@@ -1,6 +1,6 @@
 [simulation]
 t_start = 0.0
-t_end = 15.0
+t_end = 30.0
 dt = 0.01
 
 [model]
@@ -15,7 +15,7 @@ gravity = 9.81
 trim_flight = false
 
 [trimconditions]
-mode = "glide"
+mode = "steady_level_flight"
 v_des = 12.0
 h_des = 800.0
 gamma_des = 0.0

@@ -8,7 +8,7 @@ import numpy as np
 import pygame
 from flightgear_python.fg_if import FDMConnection
 from scipy.optimize import fsolve
-
+from flightsim.core.state import StateIndex
 from config.settings import SimConfig
 from utils.io import load_model
 from flightsim.core.state_eq import make_state_eq
@@ -281,13 +281,16 @@ class FlightGearBridge:
 
         self._x     = x0.copy()
         self._dx    = np.zeros_like(self._x)
-        self._f     = make_state_eq(model, aero_db, self._transmitter.read, cfg.atmosphere)
+        self._f, self._tick_gust = make_state_eq(model, aero_db, self._transmitter.read, cfg.atmosphere)
         self._frame = 0
+        self._t = 0.0
 
     # ------------------------------------------------------------------
     def _callback(self, fdm_data, event_pipe):
         for _ in range(STEPS_PER_SEND):
-            rk4_step(self._f, self._x, self._dx, DT)
+            self._tick_gust(self._t)
+            rk4_step(self._t, self._f, self._x, self._dx, DT)
+            self._t+=DT
             if hasattr(self._transmitter, "sim_time"):
                 self._transmitter.sim_time += DT
 
@@ -387,6 +390,7 @@ if __name__ == "__main__":
         # ----------------------------------------------------------
         print(" MODE: GROUND START  (takeoff roll)")
         x0 = cfg.x0.copy()
+        x0[StateIndex.Z_E] = ac_model.ground_altitude - ac_model.z_cg
         trim_controls = {
             "elevator": 0.0,
             "aileron":  0.0,

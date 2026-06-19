@@ -47,7 +47,7 @@ def trim_opt(Vdes, hdes, gammades, radiusdes, atmosphere: AtmosphereModel, model
 
             controls = lambda: (delta_e, 0.0, 0.0, throttle, 0.0) #ele, ail, rud, thr, brk
 
-            f_eq = make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
+            f_eq, _= make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
             dx_dt = f_eq(x, 0.0)
 
             u_dot = dx_dt[StateIndex.U]
@@ -122,7 +122,7 @@ def trim_opt(Vdes, hdes, gammades, radiusdes, atmosphere: AtmosphereModel, model
             x[StateIndex.Z_E] = -hdes
 
             controls = lambda: (delta_e, delta_a, delta_r, throttle, 0.0)
-            f_eq = make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
+            f_eq, _= make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
             dx_dt = f_eq(x, 0.0)
 
             u_dot = dx_dt[StateIndex.U]
@@ -198,7 +198,7 @@ def trim_opt(Vdes, hdes, gammades, radiusdes, atmosphere: AtmosphereModel, model
             x[StateIndex.R] = r
             x[StateIndex.Z_E] = -hdes
             controls = lambda: (delta_e, 0.0, 0.0, throttle, 0.0) #ele, ail, rud, thr, brk
-            f_eq = make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
+            f_eq, _= make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
             dx_dt = f_eq(x, 0.0)
             u_dot = dx_dt[StateIndex.U]
             v_dot = dx_dt[StateIndex.V]
@@ -248,7 +248,7 @@ def trim_opt(Vdes, hdes, gammades, radiusdes, atmosphere: AtmosphereModel, model
             x[StateIndex.THETA] = theta
             x[StateIndex.Z_E] = -hdes
             controls = lambda: (delta_e, 0.0, 0.0, throttle, 0.0) #ele, ail, rud, thr, brk
-            f_eq = make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
+            f_eq, _= make_state_eq(model, AeroDatabase(model.aero_tables_dir), controls, atmosphere)
             dx_dt = f_eq(x, 0.0)
             u_dot = dx_dt[StateIndex.U]
             v_dot = dx_dt[StateIndex.V]

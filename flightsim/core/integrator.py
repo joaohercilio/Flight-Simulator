@@ -50,7 +50,7 @@ def rk4(
         dx[:, i] = f1   # store derivative at the start of the step
 
 
-def rk4_step(
+def rk4_step(t,
     f: Callable[[NDArray, float], NDArray],
     x: NDArray,
     dx: NDArray,
@@ -67,17 +67,13 @@ def rk4_step(
         dx: Current derivative, shape (n,). Modified in-place.
         dt: Time step (s).
     """
-    f1 = f(x, 0.0)
+    f1 = f(x, t)
     k1 = dt * f1
-
-    f2 = f(x + 0.5 * k1, 0.0)
+    f2 = f(x + 0.5*k1, t + 0.5*dt)
     k2 = dt * f2
-
-    f3 = f(x + 0.5 * k2, 0.0)
+    f3 = f(x + 0.5*k2, t + 0.5*dt)
     k3 = dt * f3
-
-    f4 = f(x + k3, 0.0)
+    f4 = f(x + k3,     t + dt)
     k4 = dt * f4
-
     x[:]  = x + (k1 + 2*k2 + 2*k3 + k4) / 6
     dx[:] = f1
