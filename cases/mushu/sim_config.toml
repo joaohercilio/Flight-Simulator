@@ -12,7 +12,7 @@ density = 1.1
 gravity = 9.81
 
 [trim]
-trim_flight = true
+trim_flight = false
 
 [trimconditions]
 mode = "glide"

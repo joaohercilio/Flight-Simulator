@@ -38,16 +38,19 @@ def make_state_eq(
 ):
     """Builds the RHS of the 6DOF state equation dx/dt = f(x, t)."""
 
-    # ---------------------------------------------------------------
-    # 1. Fixed Landing Gear Structural Constants & Baseline Tuning
-    # ---------------------------------------------------------------
+    
     POS_MG    = 0.44
-    WHEELBASE = 0.306  # This is your B_mg
+    WHEELBASE = 0.306 
     Y_MG      = 0.2
     Z_GEAR    = 0.15
+    gust_amp = 6.0
+    gust_dir = 0.0
+    gust_start = 0.0
+    gust_duration = 1.0
+    next_gust = 5.0
+    gust_dirz= 0.0
     
-    # Calculate physical spring/damping constants ONCE using a fixed nominal CG.
-    # This prevents the airframe from "auto-softening" when you shift weight.
+    
     NOMINAL_X_CG = 0.3913
     x_ng_nominal = NOMINAL_X_CG - (POS_MG - WHEELBASE)
     x_mg_nominal = NOMINAL_X_CG - POS_MG
@@ -74,28 +77,80 @@ def make_state_eq(
 
     
     def f(raw: NDArray, t: float) -> NDArray:
+        nonlocal gust_amp, gust_dir, gust_duration, gust_start, next_gust, gust_dirz
         s = StateVector(raw)
+        # --- Trig Pre-computation ---
+        sin_phi, cos_phi = np.sin(s.phi), np.cos(s.phi)
+        sin_tht, cos_tht = np.sin(s.theta), np.cos(s.theta)
+        tan_tht          = np.tan(s.theta)
+        sin_psi, cos_psi = np.sin(s.psi), np.cos(s.psi)
+        
+        if t > next_gust:
+            gust_amp = np.random.uniform(9.0, 16.0)
+            gust_dir = np.random.uniform(0.0, 2*np.pi)
+            gust_dirz = np.random.uniform(-np.pi, np.pi)
+            gust_duration = np.random.uniform(1.0, 5.0)
+            gust_start = t
+            next_gust = t+np.random.uniform(5.0, 20.0)
+            print(
+            f"NEW GUST: "
+            f"A={gust_amp:.1f}, "
+            f"dir={np.rad2deg(gust_dir):.0f}"
+        )
+        tau = t-gust_start
+        if 0 <= tau <= gust_duration:
+            env = np.sin(np.pi*tau/gust_duration) **2
+        else:
+            env = 0.0
+        wx = gust_amp*env*np.cos(gust_dir)*np.cos(gust_dirz)
+        wy = gust_amp*env*np.cos(gust_dirz)*np.sin(gust_dir)
+        wz = gust_amp*env*np.sin(gust_dirz)
+
+        Cbn = np.array([
+        [
+        cos_tht*cos_psi,
+        cos_tht*sin_psi,
+        -sin_tht
+        ],
+        [
+        sin_phi*sin_tht*cos_psi - cos_phi*sin_psi,
+        sin_phi*sin_tht*sin_psi + cos_phi*cos_psi,
+        sin_phi*cos_tht
+        ],
+        [
+        cos_phi*sin_tht*cos_psi + sin_phi*sin_psi,
+        cos_phi*sin_tht*sin_psi - sin_phi*cos_psi,
+        cos_phi*cos_tht
+        ]
+        ])
+        wind_ned = np.array([wx, wy, wz])
+
+        wind_body = Cbn @ wind_ned
+        u_wind = wind_body[0]
+        v_wind = wind_body[1]
+        w_wind = wind_body[2]
+        u_air = s.u - u_wind
+        v_air = s.v - v_wind
+        w_air = s.w - w_wind
 
         # --- Atmosphere ---
         rho = atmosphere.get_density(s.altitude)
         g   = atmosphere.get_gravity(s.altitude)
 
         # --- Airspeed and Dynamic Pressure ---
-        speed = max(np.sqrt(s.u**2 + s.v**2 + s.w**2), 1e-8)
+        speed = max(
+            np.sqrt(u_air**2 + v_air**2 + w_air**2),
+            1e-8
+        )
         dyn_pres = 0.5 * rho * speed**2
 
         # --- Aerodynamic Angles ---
         if speed < 1e-8:
             alpha, beta = 0.0, 0.0
         else:
-            alpha = np.arctan2(s.w, s.u)
-            beta  = np.arcsin(s.v / speed)
+            alpha = np.arctan2(w_air, u_air)
+            beta = np.arcsin(v_air/speed)
 
-        # --- Trig Pre-computation ---
-        sin_phi, cos_phi = np.sin(s.phi), np.cos(s.phi)
-        sin_tht, cos_tht = np.sin(s.theta), np.cos(s.theta)
-        tan_tht          = np.tan(s.theta)
-        sin_psi, cos_psi = np.sin(s.psi), np.cos(s.psi)
         sin_alpha, cos_alpha = np.sin(alpha), np.cos(alpha)
         sin_beta,  cos_beta  = np.sin(beta),  np.cos(beta)
 
