@@ -32,7 +32,7 @@ class AircraftModel:
         design_deflection: Static strut deflection used to size stiffness (m).
         damping_ratio: Gear damping ratio (–).
         ground_effect: Ground-effect onset distance (m).
-        name: Aircraft display name.
+        name: Aircraft name.
     """
 
     mass:            float

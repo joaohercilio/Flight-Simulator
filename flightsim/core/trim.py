@@ -1,13 +1,6 @@
 # flightsim/core/trim.py
 """Trim optimisation: solves for steady flight conditions.
 
-Moved here out of ``main`` / ``controlsys``. ``TrimSolver`` builds the
-:class:`AeroDatabase` and :class:`Dynamics` once and reuses them across
-every optimiser evaluation — the old code re-loaded all .dat tables on
-each cost-function call, which was the main trim bottleneck.
-
-Each solver returns ``(initial_state, ControlInput)`` so the result
-plugs straight into a :class:`ConstantControl` for the Simulator.
 """
 
 from __future__ import annotations
@@ -18,13 +11,10 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize
 
-from flightsim.aero.database import AeroDatabase
-from flightsim.atmosphere.model import AtmosphereModel
-from flightsim.control.source import ControlInput, LiveControl
-from flightsim.core.dynamics import Dynamics
-from flightsim.core.state import StateIndex
-
+from flightsim.case import Case
 from flightsim.aircraft import AircraftModel
+
+from flightsim.core.state import StateIndex
 
 
 @dataclasses.dataclass(frozen=True)
@@ -35,21 +25,17 @@ class TrimResult:
         condition: The trim condition that was solved.
         x0: Trimmed initial state vector, shape (12,).
         controls: Trimmed control settings.
-        cost: Final optimiser cost (sum of squared accelerations; ~0 at trim).
     """
 
     condition: str
     x0: NDArray
     controls: ControlInput
-    cost: float
 
     def summary(self) -> str:
-        """Returns a human-readable summary (no printing here)."""
         c = self.controls
         return (
             "Trim optimization complete.\n"
             f"  Condition   : {self.condition}\n"
-            f"  Final cost J: {self.cost:.3e}\n"
             f"  Elevator: {c.elevator:.4f}, Aileron: {c.aileron:.4f}, "
             f"Rudder: {c.rudder:.4f}, Throttle: {c.throttle:.4f}, Brake: {c.brake:.4f}"
         )
@@ -60,41 +46,19 @@ class TrimSolver:
 
     Args:
         model: Aircraft model dataclass.
-        atmosphere: AtmosphereModel instance.
-        aero_db: Optional pre-loaded aero database (reused if provided).
     """
 
-    def __init__(
-        self,
-        model: AircraftModel,
-        atmosphere: AtmosphereModel,
-        aero_db: AeroDatabase | None = None,
-    ) -> None:
+    def __init__(self, model: AircraftModel, case: Case) -> None:
         self.model = model
-        self.atmosphere = atmosphere
-        self.aero_db = aero_db or AeroDatabase(model.aero_tables_dir)
+        self.case  = case
+
 
         # One control source + one dynamics, reused by every cost eval.
         self._controls = LiveControl()
         self._dynamics = Dynamics(model, self.aero_db, self._controls, atmosphere)
 
-    def solve(
-        self,
-        condition: str,
-        v_des: float,
-        h_des: float,
-        gamma_des: float = 0.0,
-        radius_des: float | None = None,
-    ) -> TrimResult:
+    def solve(self, case: Case) -> TrimResult:
         """Dispatches to the requested trim condition.
-
-        Args:
-            condition: One of 'steady_level_flight', 'coordinated_turn',
-                'steady_climb', 'glide', 'turn'.
-            v_des: Desired airspeed (m/s).
-            h_des: Desired altitude (m).
-            gamma_des: Desired flight-path angle (deg, negative = descent).
-            radius_des: Turn radius (m), required for coordinated turns.
 
         Returns:
             A TrimResult.
@@ -104,13 +68,19 @@ class TrimSolver:
             RuntimeError: If the optimiser fails to converge.
             NotImplementedError: For conditions not yet implemented.
         """
-        if condition == "steady_level_flight":
+        name = case.trim_name
+        v_des = case.target_speed
+        h_des = case.trim_alt
+        gamma_des = case.trim_gamma
+        radius_des = case.trim_radius
+
+        if name == "steady_level_flight":
             return self._steady_level_flight(v_des, h_des, gamma_des)
-        if condition == "coordinated_turn":
+        if name == "coordinated_turn":
             return self._coordinated_turn(v_des, h_des, radius_des)
-        if condition == "steady_climb":
+        if name == "steady_climb":
             return self._steady_climb(v_des, h_des, gamma_des)
-        if condition in ("glide", "turn"):
+        if name in ("glide", "turn"):
             raise NotImplementedError(f"Trim condition '{condition}' not implemented yet.")
         raise ValueError(f"Unknown trim condition: '{condition}'.")
 
@@ -127,8 +97,7 @@ class TrimSolver:
         )
 
     def _steady_level_flight(
-        self, Vdes: float, hdes: float, gammades: float,
-    ) -> TrimResult:
+        self, Vdes: float, hdes: float, gammades: float,) -> TrimResult:
         def slfres(guess):
             alpha, delta_e, throttle = guess
 
@@ -174,8 +143,7 @@ class TrimSolver:
         return TrimResult("steady_level_flight", initcond, controls, float(res.fun))
 
     def _coordinated_turn(
-        self, Vdes: float, hdes: float, radiusdes: float | None,
-    ) -> TrimResult:
+        self, Vdes: float, hdes: float, radiusdes: float | None,) -> TrimResult:
         if radiusdes is None:
             raise ValueError("Radius must be specified for coordinated turn trim condition.")
         psi_dot = Vdes/radiusdes
@@ -243,8 +211,7 @@ class TrimSolver:
         return TrimResult("coordinated_turn", initcond, controls, float(res.fun))
 
     def _steady_climb(
-        self, Vdes: float, hdes: float, gammades: float,
-    ) -> TrimResult:
+        self, Vdes: float, hdes: float, gammades: float,) -> TrimResult:
         def sclimb(guess):
             alpha, delta_e, throttle = guess
             theta = alpha + np.deg2rad(gammades)

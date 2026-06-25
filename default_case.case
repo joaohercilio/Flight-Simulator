@@ -1,0 +1,36 @@
+# case model (SI units; angular velocity in deg/s)
+[time]
+total_time = 10.0
+time_step = 0.01
+
+[case]
+name = "default_case"
+
+[gravity]
+gravity_model = "Constant force"
+g = 9.81
+
+[atmosphere]
+atmosphere_model = "Constant density"
+density = 1.1
+
+[initial_conditions]
+u = 0.0
+v = 0.0
+w = 0.0
+
+x = 0.0
+y = 0.0
+height = 0.0
+
+p = 0.0
+q = 0.0
+r = 0.0
+
+[trim_options]
+enable = false
+target_speed = 0.0
+trim_alt = 0.0
+trim_gamma = 0.0
+trim_radius = 0.0
+

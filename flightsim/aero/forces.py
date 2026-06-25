@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 from flightsim.aero.database import AeroDatabase
-from utils.io import AircraftModel
+from flightsim.aircraft import AircraftModel
+import numpy as np
 
 
 def aerodynamic_force_body(
@@ -32,7 +33,7 @@ def aerodynamic_force_body(
     """
     fx = -(drag * cos_alpha * cos_beta - lift * sin_alpha + side * cos_alpha * sin_beta)
     fy = -(drag * sin_beta) + side * cos_beta
-    fz = -(drag * sin_alpha * cos_beta - side * sin_alpha * sin_beta + lift * cos_alpha)
+    fz = -(drag * sin_alpha * cos_beta + side * sin_alpha * sin_beta + lift * cos_alpha)
     return fx, fy, fz
 
 
@@ -73,8 +74,11 @@ def aerodynamic_force_wind(
     half_b_v = model.b / (2 * speed)
     half_c_v = model.c / (2 * speed)
     gc = aero_db.get_coeff
-
-    cl = gc("CL0", alpha, beta) + gc("CL_el", alpha, beta) * el
+    if alpha > np.deg2rad(20):
+        cl = 0
+    else:
+        cl0 = gc("CL0", alpha, beta)
+        cl = cl0 + gc("CL_el", alpha, beta) * el + gc("CL_q",  alpha, beta) * q * half_c_v
 
     cd = gc("CD0", alpha, beta) + gc("CD_el", alpha, beta) * el
 

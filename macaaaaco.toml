@@ -1,0 +1,47 @@
+# aircraft model (SI units; angles in degrees)
+
+[aircraft]
+name = "macaaaaco"
+
+[inertia]
+mass = 4.0
+Ix   = 0.0
+Iy   = 0.0
+Iz   = 0.0
+Ixz  = 0.0
+x_cg = 4.0
+y_cg = 0.0
+z_cg = 0.0
+
+[geometry]
+S = 0.0
+b = 0.0
+c = 0.0
+ground_effect = 0.0
+
+[control_limits]
+elevator_min = -3.0
+elevator_max = 0.0
+aileron_min  = 0.0
+aileron_max  = 0.0
+rudder_min   = 0.0
+rudder_max   = 0.0
+
+[propulsion]
+arm_z = 0.0
+# thrust = a*v^3 + b*v^2 + c*v + d
+a = 0.0
+b = 0.0
+c = 0.0
+d = 0.0
+
+[landing_gear]
+main_gear_x = 0.0
+main_gear_y = 0.0
+nose_gear   = 3.0
+gear_height = 0.0
+design_deflection = 0.0
+damping_ratio     = 0.0
+
+[aero]
+tables_dir = "cases/mushu/aero_tables"

@@ -17,64 +17,37 @@ import dataclasses
 import pathlib
 
 from config.settings import SimConfig
-from flightsim.aero.database import AeroDatabase
-from flightsim.aircraft import AircraftModel
-from utils.io import load_model
-
-CONFIG_NAME = "sim_config.toml"
-MODEL_NAME = "aircraft_model.toml"
-
 
 @dataclasses.dataclass(frozen=True)
 class Case:
-    """A loaded case: resolved config, model and aero database.
+    """Initial conditions and settings for the simulation
 
     Attributes:
         case_dir: Path to the case directory.
-        config: Parsed simulation configuration.
+        name: case name
         model: Aircraft model.
-        aero_db: Aerodynamic database (None if loaded with load_aero=False).
     """
 
-    case_dir: pathlib.Path
-    config: SimConfig
-    model: AircraftModel
-    aero_db: AeroDatabase | None
+    total_time:       float
+    time_step:        float
+    gravity_model:    str
+    g:                float
+    atmosphere_model: str
+    density:          float
+    enable_trim:      bool
+    trim_name:        str
+    target_speed:     float
+    trim_alt:         float
+    trim_gamma:       float
+    trim_radius:      float
+    u:                float
+    v:                float
+    w:                float
+    x:                float
+    y:                float
+    height:           float
+    p:                float
+    q:                float
+    r:                float
+    name:             str = "case"
 
-    @classmethod
-    def load(cls, case_dir: pathlib.Path | str, load_aero: bool = True) -> Case:
-        """Loads a case from its directory.
-
-        The aircraft (aircraft_model.toml + aero tables) is required. The run
-        configuration (sim_config.toml) is *optional*: if present it is loaded
-        as a starting preset, otherwise defaults are used. The GUI edits the
-        config from there — the file no longer needs to exist.
-
-        Args:
-            case_dir: Path to the case directory.
-            load_aero: Whether to load the aero tables (slow). Set False when
-                you only need config/model (e.g. inspecting parameters).
-
-        Returns:
-            Populated Case instance.
-
-        Raises:
-            NotADirectoryError: If case_dir is not a directory.
-            FileNotFoundError: If the aircraft model file is missing.
-        """
-        case_dir = pathlib.Path(case_dir)
-        if not case_dir.is_dir():
-            raise NotADirectoryError(f"Case directory not found: {case_dir}")
-
-        model = load_model(case_dir / MODEL_NAME)
-        aero_db = AeroDatabase(model.aero_tables_dir) if load_aero else None
-
-        config_path = case_dir / CONFIG_NAME
-        if config_path.exists():
-            config = SimConfig.from_toml_file(config_path)
-        else:
-            config = SimConfig()
-        if config.plot_config is None:
-            config.plot_config = case_dir / "plots.toml"
-
-        return cls(case_dir=case_dir, config=config, model=model, aero_db=aero_db)

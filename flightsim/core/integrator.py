@@ -55,28 +55,32 @@ def rk4_step(
     x: NDArray,
     dx: NDArray,
     dt: float,
+    t: float = 0.0,
 ) -> None:
     """Advances the state by one RK4 step in-place.
 
     Intended for real-time simulation where the caller manages
-    the time loop externally.
+    the time loop externally. ``t`` is the time at the start of the
+    step and is forwarded to ``f`` so time-dependent control sources
+    see the true simulation clock.
 
     Args:
         f: RHS of the ODE. Callable with signature f(x, t) -> dx.
         x: Current state, shape (n,). Modified in-place.
         dx: Current derivative, shape (n,). Modified in-place.
         dt: Time step (s).
+        t: Time at the start of the step (s). Defaults to 0.0.
     """
-    f1 = f(x, 0.0)
+    f1 = f(x, t)
     k1 = dt * f1
 
-    f2 = f(x + 0.5 * k1, 0.0)
+    f2 = f(x + 0.5 * k1, t + 0.5 * dt)
     k2 = dt * f2
 
-    f3 = f(x + 0.5 * k2, 0.0)
+    f3 = f(x + 0.5 * k2, t + 0.5 * dt)
     k3 = dt * f3
 
-    f4 = f(x + k3, 0.0)
+    f4 = f(x + k3, t + dt)
     k4 = dt * f4
 
     x[:]  = x + (k1 + 2*k2 + 2*k3 + k4) / 6

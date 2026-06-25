@@ -23,19 +23,15 @@ class ControlInput:
         aileron: Aileron deflection (deg).
         rudder: Rudder deflection (deg).
         throttle: Throttle setting (0..1).
-        brake: Brake command (N).
     """
 
     elevator: float = 0.0
     aileron: float = 0.0
     rudder: float = 0.0
     throttle: float = 0.0
-    brake: float = 0.0
 
     def as_tuple(self) -> tuple[float, float, float, float, float]:
-        """Returns (elevator, aileron, rudder, throttle, brake)."""
-        return (self.elevator, self.aileron, self.rudder,
-                self.throttle, self.brake)
+        return (self.elevator, self.aileron, self.rudder, self.throttle)
 
 
 class ControlSource(abc.ABC):
