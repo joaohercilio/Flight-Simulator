@@ -63,8 +63,8 @@ class NewCaseWindow:
         # gravity
         self.gravityComboBox = w.findChild(C, "gravityComboBox")
         self.gravitySpinBox = w.findChild(S, "gravitySpinBox")
-        # atmosphere
-        self.atmosphereComboBox = w.findChild(C, "atmosphereComboBox")
+        # density
+        self.densityComboBox = w.findChild(C, "densityComboBox")
         self.densitySpinBox = w.findChild(S, "densitySpinBox")
         # initial conditions
         self.uSpinBox = w.findChild(S, "uSpinBox")
@@ -76,6 +76,9 @@ class NewCaseWindow:
         self.pSpinBox = w.findChild(S, "pSpinBox")
         self.qSpinBox = w.findChild(S, "qSpinBox")
         self.rSpinBox = w.findChild(S, "rSpinBox")
+        self.phiSpinBox = w.findChild(S, "phiSpinBox")
+        self.thetaSpinBox = w.findChild(S, "thetaSpinBox")
+        self.psiSpinBox = w.findChild(S, "psiSpinBox")
         # trim
         self.trimGroupBox = w.findChild(QtWidgets.QGroupBox, "trimGroupBox")
         self.trimCheckBox = w.findChild(QtWidgets.QCheckBox, "trimCheckBox")
@@ -92,8 +95,8 @@ class NewCaseWindow:
             total_time = self.totalTimeSpinBox.value(),
             time_step = self.timeStepSpinBox.value(),
             gravity_model = self.gravityComboBox.currentText(),
-            g = self.gravitySpinBox.value(),
-            atmosphere_model = self.atmosphereComboBox.currentText(),
+            gravity = self.gravitySpinBox.value(),
+            density_model = self.densityComboBox.currentText(),
             density = self.densitySpinBox.value(),
             enable_trim = self.trimCheckBox.isChecked(),
             trim_name = self.trimComboBox.currentText(),
@@ -109,7 +112,10 @@ class NewCaseWindow:
             height = self.heightSpinBox.value(),
             p = self.pSpinBox.value(),
             q = self.qSpinBox.value(),
-            r = self.rSpinBox.value()
+            r = self.rSpinBox.value(),
+            phi = self.phiSpinBox.value(),
+            theta = self.thetaSpinBox.value(),
+            psi = self.psiSpinBox.value()
         )
 
 
@@ -138,8 +144,8 @@ class NewCaseWindow:
         self.totalTimeSpinBox.setValue(case.total_time),
         self.timeStepSpinBox.setValue(case.time_step),
         self.gravityComboBox.setCurrentText(case.gravity_model),
-        self.gravitySpinBox.setValue(case.g),
-        self.atmosphereComboBox.setCurrentText(case.atmosphere_model),
+        self.gravitySpinBox.setValue(case.gravity),
+        self.densityComboBox.setCurrentText(case.density_model),
         self.densitySpinBox.setValue(case.density),
         self.trimCheckBox.setChecked(case.enable_trim),
         self.trimComboBox.setCurrentText(case.trim_name),
@@ -156,7 +162,9 @@ class NewCaseWindow:
         self.pSpinBox.setValue(case.p),
         self.qSpinBox.setValue(case.q),
         self.rSpinBox.setValue(case.r)
-
+        self.phiSpinBox.setValue(case.phi)
+        self.thetaSpinBox.setValue(case.theta)
+        self.psiSpinBox.setValue(case.psi)
 
     def show(self) -> None:
         self.win.show()

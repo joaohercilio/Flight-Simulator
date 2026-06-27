@@ -13,8 +13,10 @@ from gui.new_case import NewCaseWindow
 
 from flightsim.aircraft import AircraftModel
 from flightsim.case import Case
+from flightsim.offline import Application
 
 from utils.io import load_aircraft, load_case, report_model, report_case
+from utils.plot import embed_canvas, plot_channel, CHANNELS
 
 UI_FILE = pathlib.Path(__file__).resolve().parent / "mainwindow.ui"
 
@@ -53,13 +55,48 @@ class MainWindow:
         self.loadedCaseLabel = self.win.findChild(
             QtWidgets.QLabel, "loadedCaseLabel")
 
+        # LOG for save/edit files
         self.terminalPlainTextEdit = self.win.findChild(
             QtWidgets.QPlainTextEdit, "terminalPlainTextEdit")
+
+        # Simulation log
+        self.consolePlainTextEdit = self.win.findChild(
+            QtWidgets.QPlainTextEdit, "consolePlainTextEdit")
 
         self.runSimulationButton = self.win.findChild(
             QtWidgets.QPushButton, "runSimulationButton")
         self.exportResultsButton = self.win.findChild(
             QtWidgets.QPushButton, "exportResultsButton")
+
+        # Widgets for plots
+        self.widget1 = self.win.findChild(
+            QtWidgets.QWidget, "widget1")
+        self.widget2 = self.win.findChild(
+            QtWidgets.QWidget, "widget2")
+        self.widget3 = self.win.findChild(
+            QtWidgets.QWidget, "widget3")
+        self.widget4 = self.win.findChild(
+            QtWidgets.QWidget, "widget4")
+
+        self._canvas1 = embed_canvas(self.widget1)
+        self._canvas2 = embed_canvas(self.widget2)
+        self._canvas3 = embed_canvas(self.widget3)
+        self._canvas4 = embed_canvas(self.widget4)
+
+        self.comboBox1 = self.win.findChild(
+            QtWidgets.QComboBox, "comboBox1")
+        self.comboBox2 = self.win.findChild(
+            QtWidgets.QComboBox, "comboBox2")
+        self.comboBox3 = self.win.findChild(
+            QtWidgets.QComboBox, "comboBox3")
+        self.comboBox4 = self.win.findChild(
+            QtWidgets.QComboBox, "comboBox4")
+
+        self.comboBox1.currentIndexChanged.connect(lambda: self._update_plot(self._canvas1, self.comboBox1))
+        self.comboBox2.currentIndexChanged.connect(lambda: self._update_plot(self._canvas2, self.comboBox2))
+        self.comboBox3.currentIndexChanged.connect(lambda: self._update_plot(self._canvas3, self.comboBox3))
+        self.comboBox4.currentIndexChanged.connect(lambda: self._update_plot(self._canvas4, self.comboBox4))
+        self._t = self._x = None
 
         # Keep a reference to the editor window so it is not garbage-collected
         # while open.
@@ -84,8 +121,26 @@ class MainWindow:
 # ============== SIMULATION ========================
 
     def _on_run_simulation(self) -> None:
+        self.consolePlainTextEdit.clear()
+        appplication = Application(self.case, self.aircraft_model, self.console)
+        t, x, dx = appplication.run_offline()
+        self._t = t
+        self._x = x
+        for canvas, cb in zip(
+            (self._canvas1, self._canvas2, self._canvas3, self._canvas4),
+            (self.comboBox1, self.comboBox2, self.comboBox3, self.comboBox4),):
+            plot_channel(canvas, t, x, cb.currentText())
 
+    def console(self, msg: str) -> None:
+        self.consolePlainTextEdit.appendPlainText(msg)
+        self.consolePlainTextEdit.verticalScrollBar().setValue(
+            self.consolePlainTextEdit.verticalScrollBar().maximum()
+        )
 
+    def _update_plot(self, canvas, combobox) -> None:
+        if self._t is None:
+            return
+        plot_channel(canvas, self._t, self._x, combobox.currentText())
 # ============== MODEL =============================
 
     def _on_load_aircraft(self) -> None:

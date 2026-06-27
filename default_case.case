@@ -7,11 +7,11 @@ time_step = 0.01
 name = "default_case"
 
 [gravity]
-gravity_model = "Constant force"
-g = 9.81
+gravity_model = "Constant gravity"
+gravity = 9.81
 
-[atmosphere]
-atmosphere_model = "Constant density"
+[density]
+density_model = "Constant density"
 density = 1.1
 
 [initial_conditions]
@@ -21,14 +21,19 @@ w = 0.0
 
 x = 0.0
 y = 0.0
-height = 0.0
+height = 10.0
 
 p = 0.0
 q = 0.0
 r = 0.0
 
+phi = 0.0
+theta = 0.0
+psi = 0.0
+
 [trim_options]
 enable = false
+trim_name = "Steady level flight"
 target_speed = 0.0
 trim_alt = 0.0
 trim_gamma = 0.0

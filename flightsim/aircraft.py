@@ -51,7 +51,7 @@ class AircraftModel:
     aileron_max:     float
     rudder_max:      float
     aero_tables_dir: pathlib.Path
-    ground_altitude: float = 0.0
+    ground_altitude: float = 0
     # --- new: were hard-coded in Dynamics ---
     elevator_min:      float = -25.0
     aileron_min:       float = -20.0

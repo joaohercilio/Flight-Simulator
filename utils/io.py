@@ -126,7 +126,7 @@ def load_case(case_file: pathlib.Path) -> Case:
     case               = data["case"]
     time               = data["time"]
     gravity            = data["gravity"]
-    atmosphere         = data["atmosphere"]
+    density            = data["density"]
     trim               = data["trim_options"]
     initial_conditions = data["initial_conditions"]
 
@@ -135,11 +135,12 @@ def load_case(case_file: pathlib.Path) -> Case:
         total_time = time["total_time"],
         time_step = time["time_step"],
         gravity_model = gravity["gravity_model"],
-        g = gravity["g"],
-        atmosphere_model = atmosphere["atmosphere_model"],
-        density = atmosphere["density"],
+        gravity = gravity["gravity"],
+        density_model = density["density_model"],
+        density = density["density"],
         enable_trim = trim["enable"],
         target_speed = trim["target_speed"],
+        trim_name = trim["trim_name"],
         trim_alt =  trim["trim_alt"],
         trim_gamma = trim["trim_gamma"],
         trim_radius = trim["trim_radius"],
@@ -152,6 +153,9 @@ def load_case(case_file: pathlib.Path) -> Case:
         p = initial_conditions["p"],
         q = initial_conditions["q"],
         r = initial_conditions["r"],
+        phi = initial_conditions["phi"],
+        theta = initial_conditions["theta"],
+        psi = initial_conditions["psi"]
     )
 
 
@@ -216,11 +220,11 @@ name = "{case.name}"
 
 [gravity]
 gravity_model = "{case.gravity_model}"
-g = {case.g}
+gravity = {case.gravity}
 
-[atmosphere]
-atmosphere_model = "{case.atmosphere_model}"
-air density = {case.density}
+[density]
+density_model = "{case.density_model}"
+density = {case.density}
 
 [initial_conditions]
 u = {case.u}
@@ -235,8 +239,13 @@ p = {case.p}
 q = {case.q}
 r = {case.r}
 
+phi = {case.phi}
+theta = {case.theta}
+psi = {case.psi}
+
 [trim_options]
 enable = {case.enable_trim}
+trim_name = "{case.trim_name}"
 target_speed = {case.target_speed}
 trim_alt = {case.trim_alt}
 trim_gamma = {case.trim_gamma}
@@ -330,10 +339,10 @@ name = "{case.name}"
 
 [gravity]
 gravity_model = "{case.gravity_model}"
-g = {case.g}
+gravity = {case.gravity}
 
-[atmosphere]
-atmosphere_model = "{case.atmosphere_model}"
+[density]
+density_model = "{case.density_model}"
 density = {case.density}
 
 [initial_conditions]
@@ -349,8 +358,13 @@ p = {case.p}
 q = {case.q}
 r = {case.r}
 
+phi = {case.phi}
+theta = {case.theta}
+psi = {case.psi}
+
 [trim_options]
 enable = {str(case.enable_trim).lower()}
+trim_name = "{case.trim_name}"
 target_speed = {case.target_speed}
 trim_alt = {case.trim_alt}
 trim_gamma = {case.trim_gamma}
@@ -492,31 +506,6 @@ _DEFAULT_FIGURES: list[list[str]] = [
 ]
 
 
-def _load_plot_config(path: pathlib.Path | None) -> list[list[str]]:
-    """Parses a plots.toml file into a list of figure definitions.
-
-    Each [[figure]] entry defines one figure window, listing which
-    groups of variables to include as subplot rows.
-
-    Args:
-        path: Path to plots.toml, or None.
-
-    Returns:
-        List of figures, each a list of group name strings. Falls back to a
-        sensible built-in default when the file is absent.
-
-    Raises:
-        KeyError: If the TOML structure is invalid.
-    """
-    if path is None or not path.exists():
-        return [list(groups) for groups in _DEFAULT_FIGURES]
-
-    with open(path, "rb") as f:
-        data = tomllib.load(f)
-
-    return [figure["groups"] for figure in data["figure"]]
-
-
 def _plot_figure(
     t: NDArray,
     groups: dict[str, list[tuple[str, NDArray]]],
@@ -582,46 +571,4 @@ def _plot_figure(
                 ax.axis("off")
 
 
-def generate_plots(
-    t: NDArray,
-    x: NDArray,
-    dx: NDArray,
-    plot_config: pathlib.Path,
-    output_dir: pathlib.Path | None = None,
-    save_figures: bool = False,
-    show_gui: bool = True,
-) -> None:
-    """Generates simulation plots from a TOML plot configuration.
 
-    Args:
-        t: Time vector, shape (N,).
-        x: State history, shape (12, N).
-        dx: State derivative history, shape (12, N).
-        plot_config: Path to plots.toml.
-        output_dir: Directory to save figures. Required if save_figures=True.
-        save_figures: Whether to save figures to disk as PNG.
-        show_gui: Whether to open interactive plot windows.
-    """
-    groups = _build_plot_groups(x, dx)
-    figures = _load_plot_config(plot_config)
-
-    for i, group_names in enumerate(figures):
-
-        if "Trajectory 3D" in group_names:
-            _plot_trajectory_3d(groups["Position"], output_dir, save_figures, i)
-
-            group_names = [g for g in group_names if g != "Trajectory 3D"]
-            if not group_names:
-                continue
-
-        _plot_figure(t, groups, group_names)
-
-        if save_figures:
-            if output_dir is None:
-                raise ValueError("output_dir must be set when save_figures=True")
-            output_dir.mkdir(parents=True, exist_ok=True)
-            name = "_".join(group_names).lower().replace(" ", "_")
-            plt.savefig(output_dir / f"fig_{i+1:02d}_{name}.png", dpi=150, bbox_inches="tight")
-
-    if show_gui:
-        plt.show()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from flightsim.case import Case
 
 class StateIndex:
     """Canonical indices for the state vector.
@@ -127,43 +128,19 @@ class StateVector:
         """Altitude (m), positive upward. Derived from z_e."""
         return -self._x[StateIndex.Z_E]
 
-    @classmethod
-    def from_dict(cls, d: dict[str, float]) -> StateVector:
-        """Builds a StateVector from a named dict (e.g. from TOML).
-
-        Args:
-            d: Dict with keys matching state variable names.
-
-        Returns:
-            New StateVector backed by a fresh array.
-
-        Raises:
-            KeyError: If any required key is missing from d.
-        """
-        arr = np.zeros(StateIndex.SIZE)
-        s = cls(arr)
-        s.x_e  = d["x_e"]
-        s.y_e  = d["y_e"]
-        s.z_e  = d["z_e"]
-        s.phi  = d["phi"]
-        s.theta = d["theta"]
-        s.psi  = d["psi"]
-        s.u    = d["u"]
-        s.v    = d["v"]
-        s.w    = d["w"]
-        s.p    = d["p"]
-        s.q    = d["q"]
-        s.r    = d["r"]
+    @staticmethod
+    def build_state_from_case(case: Case) -> StateVector:
+        s = StateVector(np.zeros(StateIndex.SIZE))
+        s.x_e  =  case.x
+        s.y_e  =  case.y
+        s.z_e  = -case.height
+        s.phi  = case.phi
+        s.theta = case.theta
+        s.psi  = case.psi
+        s.u    = case.u
+        s.v    = case.v
+        s.w    = case.w
+        s.p    = case.p
+        s.q    = case.q
+        s.r    = case.r
         return s
-
-    def to_array(self) -> NDArray:
-        """Returns the underlying array (no copy)."""
-        return self._x
-
-    def __repr__(self) -> str:
-        return (
-            f"StateVector(pos=({self.x_e:.1f}, {self.y_e:.1f}, {self.z_e:.1f}), "
-            f"att=({self.phi:.3f}, {self.theta:.3f}, {self.psi:.3f}), "
-            f"vel=({self.u:.2f}, {self.v:.2f}, {self.w:.2f}), "
-            f"rate=({self.p:.3f}, {self.q:.3f}, {self.r:.3f}))"
-        )

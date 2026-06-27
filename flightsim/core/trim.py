@@ -15,7 +15,7 @@ from flightsim.case import Case
 from flightsim.aircraft import AircraftModel
 
 from flightsim.core.state import StateIndex
-
+from flightsim.control.source import ControlInput
 
 @dataclasses.dataclass(frozen=True)
 class TrimResult:
@@ -37,7 +37,7 @@ class TrimResult:
             "Trim optimization complete.\n"
             f"  Condition   : {self.condition}\n"
             f"  Elevator: {c.elevator:.4f}, Aileron: {c.aileron:.4f}, "
-            f"Rudder: {c.rudder:.4f}, Throttle: {c.throttle:.4f}, Brake: {c.brake:.4f}"
+            f"  Rudder: {c.rudder:.4f}, Throttle: {c.throttle:.4f}"
         )
 
 

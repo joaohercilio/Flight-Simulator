@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>972</width>
-    <height>800</height>
+    <width>992</width>
+    <height>881</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,7 +28,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Flight Simulator - Nisus Aerodesign</string>
+         <string>Flight Simulator</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -143,7 +143,7 @@
         <item row="0" column="0">
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
-           <widget class="QPushButton" name="pushButton">
+           <widget class="QPushButton" name="runSimulationButton">
             <property name="text">
              <string>Run simulation</string>
             </property>
@@ -163,7 +163,11 @@
             </property>
             <layout class="QGridLayout" name="gridLayout_5">
              <item row="0" column="0">
-              <widget class="QTextEdit" name="textEdit"/>
+              <widget class="QPlainTextEdit" name="consolePlainTextEdit">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -175,56 +179,296 @@
           <property name="title">
            <string>Plots</string>
           </property>
-          <layout class="QGridLayout" name="gridLayout_6">
+          <layout class="QGridLayout" name="gridLayout_3">
            <item row="0" column="0">
             <layout class="QGridLayout" name="gridLayout_4">
-             <item row="3" column="1">
-              <widget class="QComboBox" name="comboBox_4">
-               <item>
-                <property name="text">
-                 <string>alpha [deg]</string>
-                </property>
-               </item>
-              </widget>
+             <item row="1" column="0" rowspan="2">
+              <widget class="QWidget" name="widget1" native="true"/>
              </item>
              <item row="0" column="0">
-              <widget class="QComboBox" name="comboBox">
+              <widget class="QComboBox" name="comboBox1">
+               <item>
+                <property name="text">
+                 <string>x [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>y [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>height [m]</string>
+                </property>
+               </item>
                <item>
                 <property name="text">
                  <string>u [m/s]</string>
                 </property>
                </item>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QComboBox" name="comboBox_2">
                <item>
                 <property name="text">
                  <string>v [m/s]</string>
                 </property>
                </item>
-              </widget>
-             </item>
-             <item row="4" column="0" rowspan="2">
-              <widget class="QWidget" name="widget_3" native="true"/>
-             </item>
-             <item row="3" column="0">
-              <widget class="QComboBox" name="comboBox_3">
                <item>
                 <property name="text">
                  <string>w [m/s]</string>
                 </property>
                </item>
+               <item>
+                <property name="text">
+                 <string>phi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>theta [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>psi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>p [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>q [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>r [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string/>
+                </property>
+               </item>
               </widget>
              </item>
-             <item row="4" column="1" rowspan="2">
-              <widget class="QWidget" name="widget_4" native="true"/>
-             </item>
-             <item row="1" column="0" rowspan="2">
-              <widget class="QWidget" name="widget" native="true"/>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="comboBox2">
+               <item>
+                <property name="text">
+                 <string>x [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>y [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>height [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>u [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>v [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>w [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>phi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>theta [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>psi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>p [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>q [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>r [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string/>
+                </property>
+               </item>
+              </widget>
              </item>
              <item row="1" column="1" rowspan="2">
-              <widget class="QWidget" name="widget_2" native="true"/>
+              <widget class="QWidget" name="widget2" native="true"/>
+             </item>
+             <item row="3" column="0">
+              <widget class="QComboBox" name="comboBox3">
+               <item>
+                <property name="text">
+                 <string>x [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>y [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>height [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>u [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>v [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>w [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>phi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>theta [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>psi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>p [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>q [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>r [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string/>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="4" column="0" rowspan="2">
+              <widget class="QWidget" name="widget3" native="true"/>
+             </item>
+             <item row="4" column="1" rowspan="2">
+              <widget class="QWidget" name="widget4" native="true"/>
+             </item>
+             <item row="3" column="1">
+              <widget class="QComboBox" name="comboBox4">
+               <item>
+                <property name="text">
+                 <string>x [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>y [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>height [m]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>u [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>v [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>w [m/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>phi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>theta [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>psi [deg]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>p [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>q [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>r [deg/s]</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string/>
+                </property>
+               </item>
+              </widget>
              </item>
             </layout>
            </item>
@@ -247,8 +491,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>972</width>
-     <height>22</height>
+     <width>992</width>
+     <height>19</height>
     </rect>
    </property>
   </widget>

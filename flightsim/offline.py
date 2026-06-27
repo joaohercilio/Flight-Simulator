@@ -1,6 +1,5 @@
 # flightsim/offline.py
 """Application layer: orchestrates a full offline run.
-
 """
 
 from __future__ import annotations
@@ -12,71 +11,81 @@ from numpy.typing import NDArray
 
 from flightsim.case import Case
 from flightsim.aircraft import AircraftModel
-
 from flightsim.control.source import ConstantControl, ControlInput, ControlSource
 from flightsim.core.simulation import Simulator
+from flightsim.core.state import StateVector
 from flightsim.core.trim import TrimSolver
-from utils.io import generate_plots
+from flightsim.aero.database import AeroDatabase
+from flightsim.environment.density import DensityModel
+from flightsim.environment.gravity import GravityModel
 
 
 class Application:
 
 
-    def __init__(self, case: Case, aircraft: AircraftModel) -> None:
+    def __init__(self, case: Case, aircraft: AircraftModel, console: Callable[[str], None]) -> None:
         self.case = case
         self.aircraft = aircraft
+        self.console = console
 
 
     def resolve_initial_conditions(self) -> tuple[NDArray, ControlInput]:
-        """Returns (x0, controls) from trim or the manual initial condition.
-
-
-        Returns:
-            Tuple (initial_state, controls).
-        """
-
         if self.case.enable_trim:
-            self._report(f"Performing trim optimization ({case.trim_condition})...")
+            self.console(f"Performing trim optimization ({case.trim_name})...")
             trimSolver = TrimSolver(self.model, self.case)
             trimResult = trimSolver.solve()
-            self._report(trimResult.summary())
+            self.console(trimResult.summary())
             return trimResult.x0, trimResult.controls
 
-        self._report("Bypassing trim optimization. Using manual initial conditions.")
-        x0 =
-        return ,
+        self.console("Bypassing trim optimization. Using manual initial conditions.")
+        x0 = StateVector.build_state_from_case(self.case)
+        control = ControlInput()
+        return x0, control
 
-    def build_simulator(self, controls: ControlSource) -> Simulator:
-        """Builds a Simulator wired to the given control source."""
-        return Simulator(
-            self.case.model, self.config.atmosphere, controls, self.case.aero_db,
-        )
 
-    def run_offline(
-        self, force_no_trim: bool = False,
-    ) -> tuple[NDArray, NDArray, NDArray]:
+    def build_aero_db(self) -> AeroDatabase:
+        aero_db = AeroDatabase(self.aircraft.aero_tables_dir)
+        return aero_db
+
+
+    def build_environment(self) -> tuple[DensityModel, GravityModel]:
+        density_model = DensityModel.build(self.case.density_model, self.case.density)
+        gravity_model = GravityModel.build(self.case.gravity_model, self.case.gravity)
+        self.console (f"Density model: {self.case.density_model} ")
+        self.console (f"Gravity model: {self.case.gravity_model} ")
+        return density_model, gravity_model
+
+
+    def run_offline(self) -> tuple[NDArray, NDArray, NDArray]:
         """Runs the full offline pipeline and generates plots.
-
-        Args:
-            force_no_trim: If True, skip trim optimisation.
-
-        Returns:
-            Tuple (t, x, dx) — see Simulator.run.
         """
-        self._report(self.case.model.summary())
 
-        x0, trim = self.resolve_initial_conditions(force_no_trim)
+        x0, trim = self.resolve_initial_conditions()
+
         controls = ConstantControl(trim)
 
-        sim = self.build_simulator(controls)
-        cfg = self.config
-        t, x, dx = sim.run(cfg.t_start, cfg.t_end, cfg.dt, x0)
+        aero_db = self.build_aero_db()
 
-        generate_plots(
-            t, x, dx,
-            plot_config=cfg.plot_config,
-            output_dir=cfg.output_dir,
-            save_figures=cfg.save_figures,
-            show_gui=cfg.show_gui,
-        )
+        density_model, gravity_model = self.build_environment()
+
+        sim = Simulator(self.aircraft, controls, aero_db, density_model, gravity_model)
+
+        t, x, dx = sim.run(t_end = self.case.total_time, dt = self.case.time_step, x0 = x0)
+
         return t, x, dx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

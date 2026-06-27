@@ -1,22 +1,22 @@
 # aircraft model (SI units; angles in degrees)
 
 [aircraft]
-name = "alou_aviao"
+name = "mushu"
 
 [inertia]
-mass = 0.0
-Ix   = 0.0
-Iy   = 0.0
-Iz   = 0.0
-Ixz  = 0.0
-x_cg = 0.0
+mass = 10.54
+Ix   = 0.19
+Iy   = 0.43
+Iz   = 0.52
+Ixz  = 0.1
+x_cg = 0.39
 y_cg = 0.0
-z_cg = 0.0
+z_cg = 0.32
 
 [geometry]
-S = 0.0
-b = 0.0
-c = 0.0
+S = 0.79
+b = 1.9
+c = 0.42
 ground_effect = 0.0
 
 [control_limits]
@@ -38,10 +38,10 @@ d = 0.0
 [landing_gear]
 main_gear_x = 0.0
 main_gear_y = 0.0
-nose_gear   = 0.0
+nose_gear   = 1.0
 gear_height = 0.0
 design_deflection = 0.0
 damping_ratio     = 0.0
 
 [aero]
-tables_dir = "aero_tables"
+tables_dir = "cases/mushu/aero_tables"
