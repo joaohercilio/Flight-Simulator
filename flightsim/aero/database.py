@@ -83,4 +83,4 @@ class AeroDatabase:
         alpha_clipped = np.clip(alpha, entry["alpha"][0], entry["alpha"][-1])
         beta_clipped  = np.clip(beta,  entry["beta"][0],  entry["beta"][-1])
 
-        return float(self._interpolators[name]([[alpha_clipped, beta_clipped]]))
+        return float(self._interpolators[name]([[alpha_clipped, beta_clipped]])[0])
