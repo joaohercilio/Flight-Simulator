@@ -23,7 +23,7 @@ rudder_max = 30.0
 brake_max = 200.0
 
 [aero]
-tables_dir = "C:/Users/enzo_/Documents/GitHub/Flight-Simulator/cases/mushu/aero_tables"
+tables_dir = "C:/Users/enzo_/Documents/GitHub/fsimnew/Flight-Simulator/cases/mushu/aero_tables"
 
 [ground_altitude]
 alt = -635.3
