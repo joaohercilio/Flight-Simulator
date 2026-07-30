@@ -3,11 +3,11 @@
 
 # Inertia
 [inertia]
-mass = 10.456   # kg      — total mass
-Ix   = 0.1666090478   # kg.m^2  — roll moment of inertia
-Iy   = 0.3558972744   # kg.m^2  — pitch moment of inertia
-Iz   = 0.4381354685   # kg.m^2  — yaw moment of inertia
-Ixz  = 0.06962961912      # kg.m^2  — product of inertia (0 for symmetric aircraft)
+mass = 9.398   # kg      — total mass
+Ix   = 0.1945560079   # kg.m^2  — roll moment of inertia
+Iy   = 0.4273647411   # kg.m^2  — pitch moment of inertia
+Iz   = 0.5249720864   # kg.m^2  — yaw moment of inertia
+Ixz  = 0.09489697883      # kg.m^2  — product of inertia (0 for symmetric aircraft)
 
 # Wing geometry
 [geometry]
@@ -17,7 +17,7 @@ c = 0.4209   # m     mean aerodynamic chord
 
 # Propulsion
 [propulsion]
-arm_z_engine = -0.006   # m    vertical distance from CG to thrust line
+arm_z_engine = -0.001   # m    vertical distance from CG to thrust line
                         #     negative = thrust line above CG
 
 # Control surface deflection limits
@@ -29,4 +29,4 @@ brake_max    = 200.0  # N
 
 # Aerodynamic tables
 [aero]
-tables_dir = "C:/Users/enzo_/Documents/GitHub/Flight-Simulator/cases/mushu/aero_tables"   # path relative to this file
+tables_dir = "aero_tables"   # path relative to this file
