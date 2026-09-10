@@ -9,27 +9,22 @@ from flightsim.case import SimCase
 from gui.forms import SchemaForm
 from gui.widgets import ManeuverTable
 
-TITLES = {
-    "simulation": "Time",
-    "environment": "Environment",
-    "trim": "Trim (initial condition solved for steady flight)",
-    "initial_condition": "Initial condition (used when trim is disabled)",
-    "control": "Baseline controls (used when trim is disabled)",
-    "wind": "Wind and gusts",
-}
+COLUMNS = [
+    {"simulation": "Time", "trim": "Trim (initial condition solved for steady flight)",
+     "initial_condition": "Initial condition (used when trim is disabled)"},
+    {"environment": "Environment", "control": "Baseline controls (used when trim is disabled)",
+     "wind": "Wind and gusts"},
+]
 
 
 class SimulationTab(QtWidgets.QScrollArea):
     def __init__(self, case_dir: pathlib.Path) -> None:
         super().__init__()
-        self.form = SchemaForm(SimCase, TITLES, case_dir)
+        self.form = SchemaForm(SimCase, COLUMNS, case_dir)
         self.maneuvers = ManeuverTable()
         box = QtWidgets.QGroupBox("Scripted maneuvers")
         QtWidgets.QVBoxLayout(box).addWidget(self.maneuvers)
-        grid = self.form.layout()
-        grid.addWidget(box, 3, 0, 1, 2)
-        grid.setRowStretch(3, 0)
-        grid.setRowStretch(4, 1)
+        self.form.bottom.addWidget(box)
         self.form.widgets["trim_enable"].toggled.connect(self._trim_toggled)
         self.setWidget(self.form)
         self.setWidgetResizable(True)

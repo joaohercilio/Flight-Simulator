@@ -14,7 +14,7 @@ from gui.forms import SchemaForm
 from gui.widgets import Console
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-TITLES = {"flightgear": "Connection and start", "joystick": "Joystick mapping"}
+COLUMNS = [{"flightgear": "Connection and start"}, {"joystick": "Joystick mapping"}]
 STEPS = ("1. Configure the connection, start mode and pilot input below, then save the case.\n"
          "2. Launch FlightGear (button or the command shown) and wait until the scenery is loaded.\n"
          "3. Start the bridge: the 6DOF model integrates in real time and drives the FlightGear aircraft.")
@@ -91,7 +91,7 @@ class FlightGearTab(QtWidgets.QScrollArea):
         super().__init__()
         self.get_session = get_session
         self.case_dir = case_dir
-        self.form = SchemaForm(SimCase, TITLES, case_dir)
+        self.form = SchemaForm(SimCase, COLUMNS, case_dir)
         self.form.changed.connect(self.refresh_command)
         self.monitor = JoystickMonitor()
         self.form.widgets["fg_control"].currentTextChanged.connect(self._control_changed)

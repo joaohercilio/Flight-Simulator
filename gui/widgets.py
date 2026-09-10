@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from flightsim.control.source import SURFACES
+from gui.forms import NoWheelFilter
 
 
 class Console(QtWidgets.QPlainTextEdit):
@@ -66,13 +67,20 @@ class ManeuverTable(QtWidgets.QWidget):
         combo = QtWidgets.QComboBox()
         combo.addItems(SURFACES)
         combo.setCurrentText(m["surface"])
+        self._no_wheel(combo)
         self.table.setCellWidget(row, 0, combo)
         for col, key in enumerate(self.COLUMNS[1:], start=1):
             spin = QtWidgets.QDoubleSpinBox()
             spin.setRange(-1e4, 1e4)
             spin.setDecimals(3)
             spin.setValue(float(m[key]))
+            self._no_wheel(spin)
             self.table.setCellWidget(row, col, spin)
+
+    @staticmethod
+    def _no_wheel(w: QtWidgets.QWidget) -> None:
+        w.setFocusPolicy(QtCore.Qt.StrongFocus)
+        w.installEventFilter(NoWheelFilter(w))
 
     def _remove(self) -> None:
         rows = sorted({i.row() for i in self.table.selectedIndexes()}, reverse=True) or ([self.table.rowCount() - 1] if self.table.rowCount() else [])

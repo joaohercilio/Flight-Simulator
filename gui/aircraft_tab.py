@@ -8,22 +8,19 @@ from flightsim.aero.database import AeroDatabase
 from flightsim.aircraft import AircraftModel
 from gui.forms import SchemaForm
 
-TITLES = {
-    "aircraft": "Identification",
-    "inertia": "Mass and inertia",
-    "geometry": "Reference geometry",
-    "control_limits": "Control surface limits",
-    "propulsion": "Propulsion  (T = throttle · (aV³ + bV² + cV + d) · ρ/ρ₀)",
-    "landing_gear": "Landing gear (tricycle)",
-    "aero": "Aerodynamic tables",
-}
+COLUMNS = [
+    {"aircraft": "Identification", "inertia": "Mass and inertia", "geometry": "Reference geometry",
+     "aero": "Aerodynamic tables"},
+    {"control_limits": "Control surface limits", "propulsion": "Propulsion  (T = throttle · (aV³ + bV² + cV + d) · ρ/ρ₀)",
+     "landing_gear": "Landing gear (tricycle)"},
+]
 
 
 class AircraftTab(QtWidgets.QScrollArea):
     def __init__(self, case_dir: pathlib.Path) -> None:
         super().__init__()
         self.case_dir = case_dir
-        self.form = SchemaForm(AircraftModel, TITLES, case_dir)
+        self.form = SchemaForm(AircraftModel, COLUMNS, case_dir)
         self.status = QtWidgets.QLabel()
         self.status.setWordWrap(True)
         self.form.groups["aero"].layout().addRow(self.status)

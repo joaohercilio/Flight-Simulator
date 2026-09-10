@@ -49,6 +49,11 @@ class PathEdit(QtWidgets.QWidget):
         self.edit.setText(value)
 
 
+class NoWheelFilter(QtCore.QObject):
+    def eventFilter(self, obj, event) -> bool:
+        return event.type() == QtCore.QEvent.Wheel and not obj.hasFocus()
+
+
 def make_widget(field: dataclasses.Field, base_dir: pathlib.Path | None) -> QtWidgets.QWidget:
     meta = field.metadata
     default = field.default
@@ -74,6 +79,9 @@ def make_widget(field: dataclasses.Field, base_dir: pathlib.Path | None) -> QtWi
     else:
         w = QtWidgets.QLineEdit()
     w.setToolTip(f"[{meta['section']}] {meta.get('key') or field.name}")
+    if isinstance(w, (QtWidgets.QAbstractSpinBox, QtWidgets.QComboBox)):
+        w.setFocusPolicy(QtCore.Qt.StrongFocus)
+        w.installEventFilter(NoWheelFilter(w))
     return w
 
 
@@ -101,35 +109,42 @@ def set_value(w: QtWidgets.QWidget, value) -> None:
 class SchemaForm(QtWidgets.QWidget):
     changed = QtCore.Signal()
 
-    def __init__(self, cls, titles: dict[str, str], base_dir: pathlib.Path | None = None, columns: int = 2) -> None:
+    def __init__(self, cls, columns: list[dict[str, str]], base_dir: pathlib.Path | None = None) -> None:
         super().__init__()
         self.cls = cls
         self.widgets: dict[str, QtWidgets.QWidget] = {}
         self.groups: dict[str, QtWidgets.QGroupBox] = {}
-        grid = QtWidgets.QGridLayout(self)
-        grid.setAlignment(QtCore.Qt.AlignTop)
-        for i, (section, title) in enumerate(titles.items()):
-            box = QtWidgets.QGroupBox(title)
-            form = QtWidgets.QFormLayout(box)
-            form.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
-            for field in sections(cls).get(section, []):
-                if field.default is dataclasses.MISSING:
-                    continue
-                w = make_widget(field, base_dir)
-                self.widgets[field.name] = w
-                label = field.metadata.get("label") or field.name
-                if isinstance(w, QtWidgets.QCheckBox):
-                    w.setText(label)
-                    form.addRow(w)
-                else:
-                    form.addRow(label + ":", w)
-                self._connect(w)
-            box.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
-            self.groups[section] = box
-            grid.addWidget(box, i // columns, i % columns, alignment=QtCore.Qt.AlignTop)
-        for c in range(columns):
-            grid.setColumnStretch(c, 1)
-        grid.setRowStretch(grid.rowCount(), 1)
+        outer = QtWidgets.QVBoxLayout(self)
+        row = QtWidgets.QHBoxLayout()
+        outer.addLayout(row)
+        self.bottom = QtWidgets.QVBoxLayout()
+        outer.addLayout(self.bottom)
+        outer.addStretch(1)
+        for titles in columns:
+            column = QtWidgets.QVBoxLayout()
+            for section, title in titles.items():
+                column.addWidget(self._group(section, title, base_dir))
+            column.addStretch(1)
+            row.addLayout(column, 1)
+
+    def _group(self, section: str, title: str, base_dir: pathlib.Path | None) -> QtWidgets.QGroupBox:
+        box = QtWidgets.QGroupBox(title)
+        form = QtWidgets.QFormLayout(box)
+        form.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
+        for field in sections(self.cls).get(section, []):
+            if field.default is dataclasses.MISSING:
+                continue
+            w = make_widget(field, base_dir)
+            self.widgets[field.name] = w
+            label = field.metadata.get("label") or field.name
+            if isinstance(w, QtWidgets.QCheckBox):
+                w.setText(label)
+                form.addRow(w)
+            else:
+                form.addRow(label + ":", w)
+            self._connect(w)
+        self.groups[section] = box
+        return box
 
     def _connect(self, w: QtWidgets.QWidget) -> None:
         if isinstance(w, QtWidgets.QCheckBox):

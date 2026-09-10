@@ -1,5 +1,5 @@
 maneuver = [
-    { surface = "elevator", start = 5.0, end = 6.0, deflection = -2.0 },
+    { surface = "elevator", start = 5.0, end = 6.0, deflection = 2.0 },
 ]
 
 [case]
@@ -65,7 +65,7 @@ port_out = 5502
 packet_hz = 60
 fdm_hz = 240
 start_mode = "trimmed"
-control = "joystick"
+control = "keyboard"
 latitude = -23.2292
 longitude = -45.8615
 heading = 0.0
