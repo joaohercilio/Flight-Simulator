@@ -21,7 +21,7 @@ def _wrap_deg(angle: NDArray) -> NDArray:
 
 
 def build_groups(res: SimulationResult) -> dict[str, Group]:
-    x, dx, u = res.x, res.dx, res.u
+    x, dx, u, F = res.x, res.dx, res.u, res.force
     deg = np.degrees
     return {
         "Position": [("North [m]", _clean(x[I.X_E])), ("East [m]", _clean(x[I.Y_E])), ("Altitude [m]", _clean(-x[I.Z_E]))],
@@ -41,8 +41,15 @@ def build_groups(res: SimulationResult) -> dict[str, Group]:
         "Body acceleration": [("u_dot [m/s²]", _clean(dx[I.U])), ("v_dot [m/s²]", _clean(dx[I.V])),
                               ("w_dot [m/s²]", _clean(dx[I.W]))],
         "Controls": [("Elevator [deg]", u[0]), ("Aileron [deg]", u[1]), ("Rudder [deg]", u[2]), ("Throttle [-]", u[3])],
+        "Aero forces": [("Lift [N]", _clean(F("lift"))), ("Drag [N]", _clean(F("drag"))), ("Side force [N]", _clean(F("side")))],
+        "Body forces": [("Fx [N]", _clean(F("fx"))), ("Fy [N]", _clean(F("fy"))), ("Fz [N]", _clean(F("fz")))],
+        "Moments": [("L roll [N·m]", _clean(F("l"))), ("M pitch [N·m]", _clean(F("m"))), ("N yaw [N·m]", _clean(F("n")))],
+        "Load factor": [("nx [-]", _clean(F("nx"))), ("ny [-]", _clean(F("ny"))), ("nz [-]", _clean(F("nz")))],
+        "Thrust & gear": [("Thrust [N]", _clean(F("thrust"))), ("Gear Fx [N]", _clean(F("fx_gear"))),
+                          ("Gear Fz [N]", _clean(F("fz_gear")))],
     }
 
 
 GROUP_NAMES = ["Position", "Velocity NED", "Euler angles", "Euler rates", "Angular velocity", "Angular acceleration",
-               "Aerodynamics", "Body velocity", "Body acceleration", "Controls", TRAJECTORY_3D]
+               "Aerodynamics", "Body velocity", "Body acceleration", "Controls", "Aero forces", "Body forces", "Moments",
+               "Load factor", "Thrust & gear", TRAJECTORY_3D]

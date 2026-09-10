@@ -105,6 +105,15 @@ figures = [
         "Controls",
     ],
     [
+        "Aero forces",
+        "Body forces",
+        "Moments",
+    ],
+    [
+        "Load factor",
+        "Thrust & gear",
+    ],
+    [
         "Trajectory 3D",
     ],
 ]

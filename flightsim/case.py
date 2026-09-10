@@ -18,6 +18,8 @@ DEFAULT_FIGURES = [
     ["Position", "Velocity NED"],
     ["Euler angles", "Euler rates", "Angular velocity"],
     ["Aerodynamics", "Body velocity", "Controls"],
+    ["Aero forces", "Body forces", "Moments"],
+    ["Load factor", "Thrust & gear"],
     ["Trajectory 3D"],
 ]
 

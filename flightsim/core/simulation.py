@@ -6,7 +6,7 @@ from typing import Callable
 import numpy as np
 from numpy.typing import NDArray
 
-from flightsim.core.dynamics import Dynamics
+from flightsim.core.dynamics import FORCE_NAMES, Dynamics
 from flightsim.core.integrator import rk4_step
 from flightsim.core.state import StateIndex
 
@@ -17,6 +17,7 @@ class SimulationResult:
     x: NDArray
     dx: NDArray
     u: NDArray
+    f: NDArray
 
     @property
     def airspeed(self) -> NDArray:
@@ -32,7 +33,10 @@ class SimulationResult:
 
     def window(self, t_start: float, t_end: float) -> SimulationResult:
         mask = (self.t >= t_start) & (self.t <= t_end)
-        return SimulationResult(self.t[mask], self.x[:, mask], self.dx[:, mask], self.u[:, mask])
+        return SimulationResult(self.t[mask], self.x[:, mask], self.dx[:, mask], self.u[:, mask], self.f[:, mask])
+
+    def force(self, name: str) -> NDArray:
+        return self.f[FORCE_NAMES.index(name)]
 
 
 class Simulator:
@@ -40,11 +44,17 @@ class Simulator:
         self.dynamics = dynamics
         self.x = np.array(x0, dtype=float)
         self.dx = np.zeros(StateIndex.SIZE)
+        self.forces = np.zeros(len(FORCE_NAMES))
         self.t = t0
+
+    def evaluate(self) -> None:
+        self.dx[:] = self.dynamics(self.x, self.t)
+        self.forces[:] = self.dynamics.forces
 
     def step(self, dt: float) -> None:
         self.dynamics.env.wind.update(self.t)
         self.dynamics.controls.poll()
+        self.evaluate()
         rk4_step(self.dynamics, self.x, self.dx, self.t, dt)
         self.t += dt
 
@@ -54,16 +64,19 @@ class Simulator:
         x = np.zeros((StateIndex.SIZE, n))
         dx = np.zeros((StateIndex.SIZE, n))
         u = np.zeros((5, n))
+        f = np.zeros((len(FORCE_NAMES), n))
         x[:, 0] = self.x
         for i in range(n - 1):
             u[:, i] = self.dynamics.limit(self.dynamics.controls.get(self.t)).as_tuple()
             self.step(dt)
             x[:, i + 1] = self.x
             dx[:, i] = self.dx
+            f[:, i] = self.forces
             if progress and i % 200 == 0:
                 progress(i / (n - 1))
-        dx[:, -1] = self.dynamics(self.x, self.t)
+        self.evaluate()
+        dx[:, -1], f[:, -1] = self.dx, self.forces
         u[:, -1] = self.dynamics.limit(self.dynamics.controls.get(self.t)).as_tuple()
         if progress:
             progress(1.0)
-        return SimulationResult(t, x, dx, u)
+        return SimulationResult(t, x, dx, u, f)

@@ -38,7 +38,7 @@ Both files are edited from the GUI (Aircraft / Simulation / FlightGear tabs); *N
 
 - **Aircraft** – every aircraft parameter, with the aero tables checked as you edit.
 - **Simulation** – time, environment (constant/ISA density, ground elevation, landing gear), wind and random gusts, trim condition (level, climb, coordinated turn, glide) or manual initial condition, and a table of scripted maneuvers (time-windowed deflections added to the trim).
-- **Analysis** – run the simulation in the background, plots per channel group (position, Euler angles, rates, aerodynamics, body velocities/accelerations, controls, 3D trajectory), trim only, linear modes (eigenvalues, ωn, ζ), ceiling sweep, CSV export of the full history or a time window (loads analysis), PNG export.
+- **Analysis** – run the simulation in the background, plots per channel group (position, Euler angles, rates, aerodynamics, body velocities/accelerations, controls, aerodynamic forces, total body forces and moments, load factors, thrust and gear forces, 3D trajectory), trim only, linear modes (eigenvalues, ωn, ζ), ceiling sweep, CSV export of the full history or a time window (states, derivatives, controls, forces and moments — for loads analysis), PNG export.
 - **FlightGear** – connection ports and rates, start mode (trimmed / initial condition / on ground), pilot input (joystick with axis mapping and a live axis monitor, keyboard, scripted), generated `fgfs` command, launch FlightGear and start/stop the bridge with live telemetry.
 
 ## FlightGear bridge

@@ -17,6 +17,10 @@ from flightsim.core.gear import LandingGear
 from flightsim.core.state import StateIndex, StateVector
 from flightsim.environment import Environment
 
+FORCE_NAMES = ("lift", "drag", "side", "fx_aero", "fy_aero", "fz_aero", "l_aero", "m_aero", "n_aero", "thrust",
+               "fx_gear", "fy_gear", "fz_gear", "l_gear", "m_gear", "n_gear", "fx", "fy", "fz", "l", "m", "n",
+               "nx", "ny", "nz")
+
 
 class Dynamics:
     def __init__(self, model: AircraftModel, aero_db: AeroDatabase, controls: ControlSource,
@@ -27,6 +31,7 @@ class Dynamics:
         self.env = env
         self.gear = LandingGear(model, env.gravity) if env.ground_contact else None
         self.on_ground = False
+        self.forces = np.zeros(len(FORCE_NAMES))
 
     def limit(self, cmd: ControlInput) -> ControlInput:
         m = self.model
@@ -75,15 +80,20 @@ class Dynamics:
             model, self.aero_db, alpha, beta, s.p, s.q, s.r,
             cmd.elevator, cmd.aileron, cmd.rudder, speed, dyn_pres)
         fx, fy, fz = aerodynamic_force_body(drag, lift, side, np.sin(alpha), np.cos(alpha), np.sin(beta), np.cos(beta))
+        aero = (lift, drag, side, fx, fy, fz, l, m, n)
 
         thrust = self.thrust(speed, rho, cmd.throttle)
         fx += thrust
         m += model.arm_z_engine * thrust
 
+        gfx = gfy = gfz = gl = gm = gn = 0.0
         if self.gear is not None:
             gfx, gfy, gfz, gl, gm, gn, self.on_ground = self.gear.forces(
                 s, self.env.ground_z, cmd.brake, sin_phi, cos_phi, sin_tht, cos_tht)
             fx, fy, fz, l, m, n = fx + gfx, fy + gfy, fz + gfz, l + gl, m + gm, n + gn
+        weight = model.mass * g
+        self.forces[:] = (*aero, thrust, gfx, gfy, gfz, gl, gm, gn, fx, fy, fz, l, m, n,
+                          fx / weight, fy / weight, -fz / weight)
 
         dx = np.zeros(StateIndex.SIZE)
         dx[0:3] = navigation_equations(s.u, s.v, s.w, sin_phi, cos_phi, sin_tht, cos_tht, sin_psi, cos_psi)
