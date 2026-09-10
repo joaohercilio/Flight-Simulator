@@ -1,55 +1,69 @@
-# flightsim/core/simulation.py
-"""Top-level simulation runner."""
-
 from __future__ import annotations
+
+import dataclasses
+from typing import Callable
 
 import numpy as np
 from numpy.typing import NDArray
 
-from flightsim.core.state_eq import make_state_eq
-from flightsim.core.integrator import rk4
-from flightsim.atmosphere.model import AtmosphereModel
-from flightsim.aero.database import AeroDatabase
+from flightsim.core.dynamics import Dynamics
+from flightsim.core.integrator import rk4_step
+from flightsim.core.state import StateIndex
 
 
-def run_simulation(
-    model: dict,
-    x0: NDArray,
-    t_start: float,
-    t_end: float,
-    dt: float,
-    atmosphere: AtmosphereModel,
-) -> tuple[NDArray, NDArray, NDArray]:
-    """Runs the 6DOF simulation using RK4 integration.
+@dataclasses.dataclass
+class SimulationResult:
+    t: NDArray
+    x: NDArray
+    dx: NDArray
+    u: NDArray
 
-    Args:
-        model: Aircraft model dict.
-        x0: Initial state vector, shape (12,).
-        t_start: Start time (s).
-        t_end: End time (s).
-        dt: Time step (s).
-        atmosphere: AtmosphereModel instance. Creates a default one if None.
+    @property
+    def airspeed(self) -> NDArray:
+        return np.sqrt(np.sum(self.x[StateIndex.U:StateIndex.W + 1] ** 2, axis=0))
 
-    Returns:
-        Tuple (t, x, dx) where:
-            t:  Time vector, shape (N,).
-            x:  State history, shape (12, N).
-            dx: State derivative history, shape (12, N).
-    """
+    @property
+    def alpha(self) -> NDArray:
+        return np.arctan2(self.x[StateIndex.W], self.x[StateIndex.U])
 
-    t  = np.arange(t_start, t_end + dt, dt)
-    x  = np.zeros((12, len(t)))
-    dx = np.zeros((12, len(t)))
+    @property
+    def beta(self) -> NDArray:
+        return np.arcsin(np.clip(self.x[StateIndex.V] / np.maximum(self.airspeed, 1e-8), -1.0, 1.0))
 
-    x[:, 0] = x0
+    def window(self, t_start: float, t_end: float) -> SimulationResult:
+        mask = (self.t >= t_start) & (self.t <= t_end)
+        return SimulationResult(self.t[mask], self.x[:, mask], self.dx[:, mask], self.u[:, mask])
 
-    def zero_control():
-        return 0.0, 0.0, 0.0, 0.0, 0.0
 
-    aero_db = AeroDatabase(model.aero_tables_dir)
+class Simulator:
+    def __init__(self, dynamics: Dynamics, x0: NDArray, t0: float = 0.0) -> None:
+        self.dynamics = dynamics
+        self.x = np.array(x0, dtype=float)
+        self.dx = np.zeros(StateIndex.SIZE)
+        self.t = t0
 
-    f = make_state_eq(model, aero_db, zero_control, atmosphere)
+    def step(self, dt: float) -> None:
+        self.dynamics.env.wind.update(self.t)
+        self.dynamics.controls.poll()
+        rk4_step(self.dynamics, self.x, self.dx, self.t, dt)
+        self.t += dt
 
-    rk4(f, x, dx, t, dt)
-
-    return t, x, dx
+    def run(self, t_end: float, dt: float, progress: Callable[[float], None] | None = None) -> SimulationResult:
+        n = int(round((t_end - self.t) / dt)) + 1
+        t = self.t + dt * np.arange(n)
+        x = np.zeros((StateIndex.SIZE, n))
+        dx = np.zeros((StateIndex.SIZE, n))
+        u = np.zeros((5, n))
+        x[:, 0] = self.x
+        for i in range(n - 1):
+            u[:, i] = self.dynamics.limit(self.dynamics.controls.get(self.t)).as_tuple()
+            self.step(dt)
+            x[:, i + 1] = self.x
+            dx[:, i] = self.dx
+            if progress and i % 200 == 0:
+                progress(i / (n - 1))
+        dx[:, -1] = self.dynamics(self.x, self.t)
+        u[:, -1] = self.dynamics.limit(self.dynamics.controls.get(self.t)).as_tuple()
+        if progress:
+            progress(1.0)
+        return SimulationResult(t, x, dx, u)

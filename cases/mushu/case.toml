@@ -1,0 +1,110 @@
+maneuver = [
+    { surface = "elevator", start = 5.0, end = 6.0, deflection = -2.0 },
+]
+
+[case]
+name = "mushu"
+aircraft = "aircraft.toml"
+
+[simulation]
+t_end = 30.0
+dt = 0.01
+
+[environment]
+density_model = "constant"
+density = 1.1
+gravity = 9.81
+ground_elevation = 635.3
+ground_contact = true
+
+[wind]
+wind_north = 0.0
+wind_east = 0.0
+wind_down = 0.0
+gust_enable = false
+gust_amplitude = 6.0
+gust_duration_min = 1.0
+gust_duration_max = 5.0
+gust_interval_min = 2.0
+gust_interval_max = 4.0
+gust_seed = 0
+
+[initial_condition]
+x = 0.0
+y = 0.0
+altitude = 800.0
+u = 12.0
+v = 0.0
+w = 0.0
+phi = 0.0
+theta = 0.0
+psi = 0.0
+p = 0.0
+q = 0.0
+r = 0.0
+
+[trim]
+trim_enable = true
+trim_condition = "steady_level_flight"
+trim_airspeed = 12.0
+trim_altitude = 800.0
+trim_gamma = 0.0
+trim_radius = 35.0
+
+[control]
+elevator = 0.0
+aileron = 0.0
+rudder = 0.0
+throttle = 0.5
+brake = 0.0
+
+[flightgear]
+host = "localhost"
+port_in = 5501
+port_out = 5502
+packet_hz = 60
+fdm_hz = 240
+start_mode = "trimmed"
+control = "joystick"
+latitude = -23.2292
+longitude = -45.8615
+heading = 0.0
+aircraft = "c172p"
+executable = "fgfs"
+extra_args = "--timeofday=noon --disable-ai-traffic"
+
+[joystick]
+index = 0
+aileron_axis = 0
+elevator_axis = 1
+rudder_axis = 3
+throttle_axis = 2
+brake_axis = -1
+invert_aileron = false
+invert_elevator = true
+invert_rudder = false
+invert_throttle = false
+deadband = 0.05
+
+[plots]
+save_figures = false
+output_dir = "results"
+figures = [
+    [
+        "Position",
+        "Velocity NED",
+    ],
+    [
+        "Euler angles",
+        "Euler rates",
+        "Angular velocity",
+    ],
+    [
+        "Aerodynamics",
+        "Body velocity",
+        "Controls",
+    ],
+    [
+        "Trajectory 3D",
+    ],
+]
