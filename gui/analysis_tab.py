@@ -49,10 +49,15 @@ class AnalysisTab(QtWidgets.QWidget):
         self.ceiling_hmax.setRange(100, 30000)
         self.ceiling_hmax.setValue(6000)
         self.ceiling_hmax.setSuffix(" m")
+        self.ceiling_speed = QtWidgets.QDoubleSpinBox()
+        self.ceiling_speed.setRange(0, 1000)
+        self.ceiling_speed.setSuffix(" m/s")
+        self.ceiling_speed.setSpecialValueText("trim airspeed")
         analysis_box = QtWidgets.QGroupBox("Analyses (use the current trim / initial condition)")
         form = QtWidgets.QFormLayout(analysis_box)
         form.addRow(self.trim_button)
         form.addRow(self.modes_button)
+        form.addRow("Airspeed:", self.ceiling_speed)
         form.addRow("Throttle:", self.ceiling_throttle)
         form.addRow("Max altitude:", self.ceiling_hmax)
         form.addRow(self.ceiling_button)
@@ -176,14 +181,15 @@ class AnalysisTab(QtWidgets.QWidget):
         self._start(task)
 
     def ceiling(self) -> None:
-        throttle, h_max = self.ceiling_throttle.value(), self.ceiling_hmax.value()
+        throttle, h_max, speed = self.ceiling_throttle.value(), self.ceiling_hmax.value(), self.ceiling_speed.value()
 
         def task(s: Session, log, _):
             env = Environment.from_case(s.case)
             env.density = ISADensity()
             dyn = s.dynamics(ScriptedControl(s.case.baseline_controls()), env)
-            log(f"Ceiling sweep: V = {s.case.trim_airspeed} m/s, throttle = {throttle:.0%}, ISA density")
-            log(ceiling_sweep(dyn, s.case.trim_airspeed, throttle, h_max, log=log).summary())
+            V = speed or s.case.trim_airspeed
+            log(f"Ceiling sweep: V = {V} m/s, throttle = {throttle:.0%}, ISA density")
+            log(ceiling_sweep(dyn, V, throttle, h_max, log=log).summary())
         self._start(task)
 
     def export(self, windowed: bool) -> None:

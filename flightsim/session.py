@@ -43,8 +43,14 @@ class Session:
     def dynamics(self, controls: ControlSource, env: Environment | None = None) -> Dynamics:
         return Dynamics(self.aircraft, self.aero_db, controls, env or Environment.from_case(self.case))
 
+    def check_altitude(self, altitude: float, what: str) -> None:
+        if self.case.ground_contact and altitude <= self.case.ground_elevation:
+            raise ValueError(f"{what} ({altitude} m) is at or below the ground elevation ({self.case.ground_elevation} m); "
+                             "raise it or disable ground contact")
+
     def trim(self, dynamics: Dynamics | None = None) -> TrimResult:
         c = self.case
+        self.check_altitude(c.trim_altitude, "Trim altitude")
         dyn = dynamics or self.dynamics(ScriptedControl(c.baseline_controls()))
         return TrimSolver(dyn).solve(c.trim_condition, c.trim_airspeed, c.trim_altitude, c.trim_gamma, c.trim_radius)
 
@@ -54,6 +60,7 @@ class Session:
             log(result.summary())
             return result.x0, result.controls
         log("Using initial conditions from case (no trim).")
+        self.check_altitude(self.case.altitude, "Initial altitude")
         return self.case.initial_state(), self.case.baseline_controls()
 
     def ground_state(self) -> NDArray:

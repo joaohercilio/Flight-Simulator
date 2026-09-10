@@ -114,6 +114,7 @@ class SchemaForm(QtWidgets.QWidget):
         self.cls = cls
         self.widgets: dict[str, QtWidgets.QWidget] = {}
         self.groups: dict[str, QtWidgets.QGroupBox] = {}
+        self._rules: dict[str, list] = {}
         outer = QtWidgets.QVBoxLayout(self)
         row = QtWidgets.QHBoxLayout()
         outer.addLayout(row)
@@ -146,23 +147,37 @@ class SchemaForm(QtWidgets.QWidget):
         self.groups[section] = box
         return box
 
-    def _connect(self, w: QtWidgets.QWidget) -> None:
+    @staticmethod
+    def signal(w: QtWidgets.QWidget):
         if isinstance(w, QtWidgets.QCheckBox):
-            w.toggled.connect(self.changed)
-        elif isinstance(w, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox)):
-            w.valueChanged.connect(self.changed)
-        elif isinstance(w, QtWidgets.QComboBox):
-            w.currentTextChanged.connect(self.changed)
-        elif isinstance(w, PathEdit):
-            w.changed.connect(self.changed)
-        else:
-            w.editingFinished.connect(self.changed)
+            return w.toggled
+        if isinstance(w, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox)):
+            return w.valueChanged
+        if isinstance(w, QtWidgets.QComboBox):
+            return w.currentTextChanged
+        if isinstance(w, PathEdit):
+            return w.changed
+        return w.editingFinished
+
+    def _connect(self, w: QtWidgets.QWidget) -> None:
+        self.signal(w).connect(self.changed)
+
+    def enable_when(self, source: str, fields: list[str], values) -> None:
+        src = self.widgets[source]
+        for name in fields:
+            self._rules.setdefault(name, []).append(lambda: get_value(src) in values)
+        self.signal(src).connect(self.apply_rules)
+
+    def apply_rules(self) -> None:
+        for name, predicates in self._rules.items():
+            self.widgets[name].setEnabled(all(p() for p in predicates))
 
     def load(self, obj) -> None:
         self.blockSignals(True)
         for name, w in self.widgets.items():
             set_value(w, getattr(obj, name))
         self.blockSignals(False)
+        self.apply_rules()
 
     def apply(self, obj):
         return dataclasses.replace(obj, **{name: get_value(w) for name, w in self.widgets.items()})

@@ -73,8 +73,11 @@ class FlightGearBridge:
         base = self.case.baseline_controls()
         if mode == "initial":
             self.log("Start: airborne from case initial conditions")
+            self.session.check_altitude(self.case.altitude, "Initial altitude")
             return self.case.initial_state(), base
         if mode == "ground":
+            if not self.case.ground_contact:
+                raise ValueError("Ground start requires 'Landing gear / ground contact' enabled in the case environment")
             self.log(f"Start: on ground at {self.case.ground_elevation} m elevation, heading {self.case.fg_heading}°")
             x0 = self.session.ground_state()
         else:

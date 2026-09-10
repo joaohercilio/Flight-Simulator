@@ -94,6 +94,7 @@ class FlightGearTab(QtWidgets.QScrollArea):
         self.form.changed.connect(self.refresh_command)
         self.monitor = JoystickMonitor()
         self.form.widgets["fg_control"].currentTextChanged.connect(self._control_changed)
+        self.form.enable_when("fg_start_mode", ["fg_heading"], {"trimmed", "ground"})
 
         self.command = QtWidgets.QPlainTextEdit()
         self.command.setReadOnly(True)
