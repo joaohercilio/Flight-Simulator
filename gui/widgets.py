@@ -57,7 +57,8 @@ class ManeuverTable(QtWidgets.QWidget):
         buttons.addStretch()
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(QtWidgets.QLabel("Deflections added to the baseline/trim command inside each time window:"))
+        layout.addWidget(QtWidgets.QLabel("Deflections added to the baseline/trim command inside each time window. "
+                                          "Table convention: +elevator = nose down, +aileron = roll left, +rudder = nose left."))
         layout.addWidget(self.table)
         layout.addLayout(buttons)
 

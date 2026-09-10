@@ -151,3 +151,5 @@ class FlightGearBridge:
             self.log("Bridge stopped.")
         finally:
             self.controls.close()
+            conn.fg_rx_sock.close()
+            conn.fg_tx_sock.close()

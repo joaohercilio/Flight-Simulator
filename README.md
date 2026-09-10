@@ -47,7 +47,9 @@ Both files are edited from the GUI (Aircraft / Simulation / FlightGear tabs); *N
 2. Launch FlightGear with the generated command (`--fdm=external --native-fdm=socket,...`).
 3. Start the bridge. The model integrates at `fdm_hz`, paced by FlightGear packets at `packet_hz`, and streams position/attitude/control surfaces back.
 
-Keyboard input opens a small window that must stay focused: arrows = elevator/aileron, A/D = rudder, W/S = throttle, Q/E = elevator trim, B = brake, Space = center.
+Keyboard input opens a small window that must stay focused: Up/Down = nose up/down, Left/Right = roll, A/D = yaw, W/S = throttle, Q/E = pitch trim, B = brake, Space = center.
+
+Control-surface sign convention (aero tables, AVL style): positive elevator = nose down, positive aileron = roll left, positive rudder = nose left. Joystick/keyboard inputs are converted so that pull = nose up, right = roll/yaw right.
 
 ## Package layout
 

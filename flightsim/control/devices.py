@@ -17,6 +17,12 @@ def _pygame(headless: bool):
     return pygame
 
 
+def stick_to_surfaces(pitch_up: float, roll_right: float, yaw_right: float, throttle: float, brake: float,
+                      limits: tuple[float, float, float]) -> ControlInput:
+    e_max, a_max, r_max = limits
+    return ControlInput(-e_max * pitch_up, -a_max * roll_right, -r_max * yaw_right, throttle, brake)
+
+
 def list_joysticks() -> list[str]:
     pg = _pygame(True)
     return [pg.joystick.Joystick(i).get_name() for i in range(pg.joystick.get_count())]
@@ -86,9 +92,8 @@ class JoystickControl(ControlSource):
         return self._js.name
 
     def poll(self) -> None:
-        ele, ail, rud, thr, brk = self._js.normalized()
-        e_max, a_max, r_max = self._limits
-        self._command = ControlInput(e_max * ele, a_max * ail, r_max * rud, thr, brk)
+        pitch_up, roll_right, yaw_right, thr, brk = self._js.normalized()
+        self._command = stick_to_surfaces(pitch_up, roll_right, yaw_right, thr, brk, self._limits)
 
     def get(self, t: float) -> ControlInput:
         return self._command
@@ -98,8 +103,8 @@ class JoystickControl(ControlSource):
 
 
 class KeyboardControl(ControlSource):
-    KEYS = ("Arrows: elevator/aileron   A/D: rudder   W/S: throttle   B: brake   Space: center   "
-            "Q/E: elevator trim")
+    KEYS = ("Up/Down: nose up/down   Left/Right: roll   A/D: yaw   W/S: throttle   B: brake   Space: center   "
+            "Q/E: pitch trim")
 
     def __init__(self, limits: tuple[float, float, float], rate: float = 1.5) -> None:
         self._pg = _pygame(False)
@@ -134,7 +139,7 @@ class KeyboardControl(ControlSource):
                 return max(value - step, -1.0)
             return value if hold else value * max(0.0, 1.0 - 4.0 * step)
 
-        ele = move(ele, k[pg.K_DOWN], k[pg.K_UP], hold=False)
+        ele = move(ele, k[pg.K_UP], k[pg.K_DOWN], hold=False)
         ail = move(ail, k[pg.K_RIGHT], k[pg.K_LEFT], hold=False)
         rud = move(rud, k[pg.K_d], k[pg.K_a], hold=False)
         thr = min(max(move(thr, k[pg.K_w], k[pg.K_s]), 0.0), 1.0)
@@ -146,8 +151,7 @@ class KeyboardControl(ControlSource):
         if k[pg.K_SPACE]:
             ele = ail = rud = self._trim = 0.0
         self._axes = [ele, ail, rud, thr, brk]
-        e_max, a_max, r_max = self._limits
-        self._command = ControlInput(e_max * min(max(ele + self._trim, -1.0), 1.0), a_max * ail, r_max * rud, thr, brk)
+        self._command = stick_to_surfaces(min(max(ele + self._trim, -1.0), 1.0), ail, rud, thr, brk, self._limits)
         if now - self._drawn > 50:
             self._drawn = now
             self._draw()
