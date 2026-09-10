@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import shlex
 import signal
+import subprocess
 import time
 from typing import Callable
 
@@ -17,6 +19,10 @@ R_EARTH = 6_378_137.0
 M_TO_FT = 3.28084
 
 
+def join_command(args: list[str]) -> str:
+    return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
+
+
 def fgfs_command(case: SimCase) -> list[str]:
     fg = case
     altitude = {"trimmed": case.trim_altitude, "initial": case.altitude}.get(fg.fg_start_mode, case.ground_elevation)
@@ -26,7 +32,7 @@ def fgfs_command(case: SimCase) -> list[str]:
             f"--native-fdm=socket,in,{fg.fg_packet_hz},{fg.fg_host},{fg.fg_port_out},udp",
             f"--aircraft={fg.fg_aircraft}", f"--lat={fg.fg_latitude}", f"--lon={fg.fg_longitude}",
             f"--heading={heading % 360:.1f}", f"--altitude={altitude * M_TO_FT:.0f}",
-            *shlex.split(fg.fg_extra_args)]
+            *shlex.split(fg.fg_extra_args, posix=os.name != "nt")]
 
 
 def make_controls(session: Session, base: ControlInput, kind: str | None = None) -> ControlSource:
@@ -123,7 +129,7 @@ class FlightGearBridge:
         conn.connect_rx(c.fg_host, c.fg_port_in, self.callback)
         conn.connect_tx(c.fg_host, c.fg_port_out)
         self.log(f"Waiting for FlightGear packets on {c.fg_host}:{c.fg_port_in} (sending to :{c.fg_port_out}) ...")
-        self.log("Launch FlightGear with: " + " ".join(fgfs_command(c)))
+        self.log("Launch FlightGear with: " + join_command(fgfs_command(c)))
 
         def stop(*_):
             raise KeyboardInterrupt

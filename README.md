@@ -9,6 +9,7 @@ pip install -r requirements.txt
 ```
 
 Python ≥ 3.11 (uses `tomllib`). FlightGear itself is only needed for the visualization bridge.
+Runs on Linux and Windows; on Windows point *fgfs executable* (FlightGear tab) to `C:\Program Files\FlightGear ...\bin\fgfs.exe`.
 
 ## Run
 

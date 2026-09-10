@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import pathlib
-import shlex
 import sys
 from typing import Callable
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from flightsim.case import SimCase
-from flightsim.flightgear.bridge import fgfs_command
+from flightsim.flightgear.bridge import fgfs_command, join_command
 from flightsim.session import Session
 from gui.forms import SchemaForm
 from gui.widgets import Console
@@ -134,6 +133,9 @@ class FlightGearTab(QtWidgets.QScrollArea):
 
         self.process = QtCore.QProcess(self)
         self.process.setProcessChannelMode(QtCore.QProcess.MergedChannels)
+        env = QtCore.QProcessEnvironment.systemEnvironment()
+        env.insert("PYTHONUTF8", "1")
+        self.process.setProcessEnvironment(env)
         self.process.readyReadStandardOutput.connect(self._read)
         self.process.finished.connect(self._finished)
         self.copy_button.clicked.connect(lambda: QtWidgets.QApplication.clipboard().setText(self.command.toPlainText()))
@@ -162,14 +164,14 @@ class FlightGearTab(QtWidgets.QScrollArea):
 
     def refresh_command(self) -> None:
         try:
-            self.command.setPlainText(shlex.join(fgfs_command(self.get_session(False).case)))
+            self.command.setPlainText(join_command(fgfs_command(self.get_session(False).case)))
         except Exception as exc:
             self.command.setPlainText(str(exc))
 
     def launch_flightgear(self) -> None:
         cmd = fgfs_command(self.get_session(False).case)
         ok, _ = QtCore.QProcess.startDetached(cmd[0], cmd[1:])
-        self.console.log(("Launched: " if ok else "Failed to launch: ") + shlex.join(cmd))
+        self.console.log(("Launched: " if ok else "Failed to launch: ") + join_command(cmd))
 
     def start_bridge(self) -> None:
         try:
@@ -191,7 +193,7 @@ class FlightGearTab(QtWidgets.QScrollArea):
                 self.process.kill()
 
     def _read(self) -> None:
-        for line in bytes(self.process.readAllStandardOutput()).decode(errors="replace").splitlines():
+        for line in bytes(self.process.readAllStandardOutput()).decode("utf-8", errors="replace").splitlines():
             if line.startswith("t ") and "|" in line:
                 self.status.setText(line)
             elif line.strip():

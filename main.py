@@ -51,11 +51,11 @@ def cmd_ceiling(args) -> None:
 
 
 def cmd_flightgear(args) -> None:
-    from flightsim.flightgear.bridge import FlightGearBridge, fgfs_command
+    from flightsim.flightgear.bridge import FlightGearBridge, fgfs_command, join_command
     from flightsim.session import Session
     s = Session(args.case)
     if args.command:
-        print(" ".join(fgfs_command(s.case)))
+        print(join_command(fgfs_command(s.case)))
         return
     FlightGearBridge(s, control_kind=args.control).run()
 
