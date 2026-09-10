@@ -58,7 +58,7 @@ class Session:
 
     def ground_state(self) -> NDArray:
         x0 = self.case.initial_state()
-        x0[StateIndex.Z_E] = -(self.case.ground_elevation + self.aircraft.gear_height)
+        x0[StateIndex.Z_E] = -(self.case.ground_elevation + self.aircraft.z_cg)
         x0[StateIndex.U:StateIndex.R + 1] = 0.0
         x0[StateIndex.PHI:StateIndex.THETA + 1] = 0.0
         return x0

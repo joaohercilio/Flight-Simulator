@@ -16,7 +16,7 @@ class AircraftModel:
     ixz: float = spec("inertia", 0.0, "Ixz", "kg·m²", key="Ixz", decimals=6, min=-1e6)
     x_cg: float = spec("inertia", 0.0, "CG x (from nose)", "m", decimals=4)
     y_cg: float = spec("inertia", 0.0, "CG y", "m", decimals=4, min=-1e3)
-    z_cg: float = spec("inertia", 0.0, "CG height above ground", "m", decimals=4)
+    z_cg: float = spec("inertia", 0.0, "CG height above ground (ground start)", "m", decimals=4)
     s: float = spec("geometry", 1.0, "Wing area S", "m²", key="S", decimals=4)
     b: float = spec("geometry", 2.0, "Wingspan b", "m", decimals=4)
     c: float = spec("geometry", 0.5, "Mean chord c", "m", decimals=4)
