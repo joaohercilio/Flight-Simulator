@@ -24,7 +24,7 @@ class AircraftTab(QtWidgets.QScrollArea):
         self.status = QtWidgets.QLabel()
         self.status.setWordWrap(True)
         self.form.groups["aero"].layout().addRow(self.status)
-        self.form.changed.connect(self.refresh_tables)
+        self.form.widgets["tables_dir"].changed.connect(self.refresh_tables)
         self.setWidget(self.form)
         self.setWidgetResizable(True)
 

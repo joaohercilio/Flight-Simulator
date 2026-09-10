@@ -28,22 +28,25 @@ class LinearModel:
 def linearize(dynamics: Dynamics, x0: NDArray, u0: ControlInput, eps: float = 1e-6) -> LinearModel:
     live = LiveControl(u0)
     previous, dynamics.controls = dynamics.controls, live
+
+    def f(x, u):
+        live.set(u)
+        return dynamics(x, 0.0)
+
     try:
-        def f(x, u):
-            live.set(u)
-            return dynamics(x, 0.0)
-        n = len(x0)
-        A = np.zeros((n, n))
-        for j in range(n):
-            d = np.zeros(n)
-            d[j] = eps * max(1.0, abs(x0[j]))
-            A[:, j] = (f(x0 + d, u0) - f(x0 - d, u0)) / (2 * d[j])
-        B = np.zeros((n, len(CONTROLS)))
-        for j, name in enumerate(CONTROLS):
-            h = 1e-4
-            up = dataclasses.replace(u0, **{name: getattr(u0, name) + h})
-            dn = dataclasses.replace(u0, **{name: getattr(u0, name) - h})
-            B[:, j] = (f(x0, up) - f(x0, dn)) / (2 * h)
+        with dynamics.env.still_air():
+            n = len(x0)
+            A = np.zeros((n, n))
+            for j in range(n):
+                d = np.zeros(n)
+                d[j] = eps * max(1.0, abs(x0[j]))
+                A[:, j] = (f(x0 + d, u0) - f(x0 - d, u0)) / (2 * d[j])
+            B = np.zeros((n, len(CONTROLS)))
+            for j, name in enumerate(CONTROLS):
+                h = 1e-4
+                up = dataclasses.replace(u0, **{name: getattr(u0, name) + h})
+                dn = dataclasses.replace(u0, **{name: getattr(u0, name) - h})
+                B[:, j] = (f(x0, up) - f(x0, dn)) / (2 * h)
     finally:
         dynamics.controls = previous
     return LinearModel(A, B, x0, u0)

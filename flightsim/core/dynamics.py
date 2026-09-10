@@ -43,12 +43,15 @@ class Dynamics:
         return throttle * (a * speed**3 + b * speed**2 + c * speed + d) * rho / 1.225
 
     def airdata(self, s: StateVector, t: float, sin_phi, cos_phi, sin_tht, cos_tht, sin_psi, cos_psi):
-        c_bn = np.array([
-            [cos_tht * cos_psi, cos_tht * sin_psi, -sin_tht],
-            [sin_phi * sin_tht * cos_psi - cos_phi * sin_psi, sin_phi * sin_tht * sin_psi + cos_phi * cos_psi, sin_phi * cos_tht],
-            [cos_phi * sin_tht * cos_psi + sin_phi * sin_psi, cos_phi * sin_tht * sin_psi - sin_phi * cos_psi, cos_phi * cos_tht],
-        ])
-        u, v, w = np.array([s.u, s.v, s.w]) - c_bn @ self.env.wind.ned(t)
+        u, v, w = s.u, s.v, s.w
+        wind = self.env.wind.ned(t)
+        if wind.any():
+            c_bn = np.array([
+                [cos_tht * cos_psi, cos_tht * sin_psi, -sin_tht],
+                [sin_phi * sin_tht * cos_psi - cos_phi * sin_psi, sin_phi * sin_tht * sin_psi + cos_phi * cos_psi, sin_phi * cos_tht],
+                [cos_phi * sin_tht * cos_psi + sin_phi * sin_psi, cos_phi * sin_tht * sin_psi - sin_phi * cos_psi, cos_phi * cos_tht],
+            ])
+            u, v, w = np.array([u, v, w]) - c_bn @ wind
         speed = max(np.sqrt(u**2 + v**2 + w**2), 1e-8)
         alpha = np.arctan2(w, u)
         beta = np.arcsin(np.clip(v / speed, -1.0, 1.0))

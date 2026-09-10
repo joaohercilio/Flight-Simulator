@@ -20,11 +20,12 @@ M_TO_FT = 3.28084
 def fgfs_command(case: SimCase) -> list[str]:
     fg = case
     altitude = {"trimmed": case.trim_altitude, "initial": case.altitude}.get(fg.fg_start_mode, case.ground_elevation)
+    heading = case.psi if fg.fg_start_mode == "initial" else fg.fg_heading
     return [fg.fg_executable, "--fdm=external",
             f"--native-fdm=socket,out,{fg.fg_packet_hz},{fg.fg_host},{fg.fg_port_in},udp",
             f"--native-fdm=socket,in,{fg.fg_packet_hz},{fg.fg_host},{fg.fg_port_out},udp",
             f"--aircraft={fg.fg_aircraft}", f"--lat={fg.fg_latitude}", f"--lon={fg.fg_longitude}",
-            f"--heading={fg.fg_heading}", f"--altitude={altitude * M_TO_FT:.0f}",
+            f"--heading={heading % 360:.1f}", f"--altitude={altitude * M_TO_FT:.0f}",
             *shlex.split(fg.fg_extra_args)]
 
 
@@ -59,27 +60,28 @@ class FlightGearBridge:
         self.steps_per_packet = max(1, round(self.case.fg_fdm_hz / self.case.fg_packet_hz))
         self.lat0 = np.radians(self.case.fg_latitude)
         self.lon0 = np.radians(self.case.fg_longitude)
-        self._frames = 0
         self._last_print = 0.0
 
     def _start_state(self):
         mode = self.case.fg_start_mode
         base = self.case.baseline_controls()
+        if mode == "initial":
+            self.log("Start: airborne from case initial conditions")
+            return self.case.initial_state(), base
         if mode == "ground":
-            self.log(f"Start: on ground at {self.case.ground_elevation} m (elevation), throttle from case")
-            return self.session.ground_state(), base
-        if mode == "trimmed":
+            self.log(f"Start: on ground at {self.case.ground_elevation} m elevation, heading {self.case.fg_heading}°")
+            x0 = self.session.ground_state()
+        else:
             result = self.session.trim(self.dynamics)
             self.log(result.summary())
-            return result.x0, result.controls
-        self.log("Start: airborne from case initial conditions")
-        return self.case.initial_state(), base
+            x0, base = result.x0, result.controls
+        x0[I.PSI] = np.radians(self.case.fg_heading)
+        return x0, base
 
     def geodetic(self, x_e: float, y_e: float) -> tuple[float, float]:
         return self.lat0 + x_e / R_EARTH, self.lon0 + y_e / (R_EARTH * np.cos(self.lat0))
 
     def callback(self, fdm, _pipe=None):
-        self.controls.poll()
         for _ in range(self.steps_per_packet):
             self.sim.step(self.dt)
         x = self.sim.x
@@ -101,7 +103,6 @@ class FlightGearBridge:
         fdm.left_aileron, fdm.right_aileron = cmd.aileron / m.aileron_max, -cmd.aileron / m.aileron_max
         fdm.rudder = cmd.rudder / m.rudder_max
         fdm.cur_time_s = int(time.time())
-        self._frames += 1
         if time.monotonic() - self._last_print > 0.5:
             self._last_print = time.monotonic()
             self.log(self.status(cmd, speed))

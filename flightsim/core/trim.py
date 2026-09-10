@@ -9,7 +9,6 @@ from scipy.optimize import minimize
 from flightsim.control.source import ControlInput, LiveControl
 from flightsim.core.dynamics import Dynamics
 from flightsim.core.state import StateIndex, StateVector
-from flightsim.environment import Wind
 
 
 @dataclasses.dataclass(frozen=True)
@@ -32,7 +31,6 @@ class TrimSolver:
     def __init__(self, dynamics: Dynamics) -> None:
         self.dynamics = dynamics
         self._live = LiveControl()
-        self._previous = dynamics.controls
 
     def _state(self, V, h, alpha, phi=0.0, theta=None, psi_dot=0.0) -> NDArray:
         theta = alpha if theta is None else theta
@@ -51,43 +49,49 @@ class TrimSolver:
         return float(np.sum(dx[StateIndex.U:StateIndex.R + 1] ** 2))
 
     def solve(self, condition: str, V: float, h: float, gamma_deg: float = 0.0, radius: float = 0.0) -> TrimResult:
-        m = self.dynamics.model
-        gamma = np.radians(gamma_deg)
-        env = self.dynamics.env
-        self.dynamics.controls, wind, env.wind = self._live, env.wind, Wind()
+        previous, self.dynamics.controls = self.dynamics.controls, self._live
         try:
-            if condition == "steady_level_flight":
-                gamma = 0.0
-            if condition in ("steady_level_flight", "steady_climb"):
-                def cost(g):
-                    return self.residual(self._state(V, h, g[0], theta=g[0] + gamma), ControlInput(elevator=g[1], throttle=g[2]))
-                res = self._minimize(cost, [0.05, 0.0, 0.5], [(-0.17, 0.35), (-m.elevator_max, m.elevator_max), (0.0, 1.0)])
-                a, de, thr = res.x
-                return TrimResult(condition, self._state(V, h, a, theta=a + gamma), ControlInput(elevator=de, throttle=thr), res.fun)
-            if condition == "glide":
-                def cost(g):
-                    return self.residual(self._state(V, h, g[0], theta=g[2]), ControlInput(elevator=g[1]))
-                res = self._minimize(cost, [0.05, 0.0, -0.05], [(-0.17, 0.35), (-m.elevator_max, m.elevator_max), (-0.6, 0.6)])
-                a, de, th = res.x
-                return TrimResult(condition, self._state(V, h, a, theta=th), ControlInput(elevator=de), res.fun)
-            if condition == "coordinated_turn":
-                if radius <= 0:
-                    raise ValueError("Turn radius must be positive for a coordinated turn")
-                psi_dot = V / radius
-                def cost(g):
-                    a, phi, de, da, dr, thr = g
-                    theta = np.arctan(np.tan(a) * np.cos(phi))
-                    return self.residual(self._state(V, h, a, phi, theta, psi_dot), ControlInput(de, da, dr, thr))
-                phi0 = np.arctan(V**2 / (self.dynamics.env.gravity * radius))
-                res = self._minimize(cost, [0.05, phi0, 0.0, 0.0, 0.0, 0.5],
-                                     [(-0.1, 0.3), (-1.05, 1.05), (-m.elevator_max, m.elevator_max),
-                                      (-m.aileron_max, m.aileron_max), (-m.rudder_max, m.rudder_max), (0.0, 1.0)])
-                a, phi, de, da, dr, thr = res.x
-                theta = np.arctan(np.tan(a) * np.cos(phi))
-                return TrimResult(condition, self._state(V, h, a, phi, theta, psi_dot), ControlInput(de, da, dr, thr), res.fun)
-            raise ValueError(f"Unknown trim condition '{condition}'")
+            with self.dynamics.env.still_air():
+                return self._solve(condition, V, h, np.radians(gamma_deg), radius)
         finally:
-            self.dynamics.controls, env.wind = self._previous, wind
+            self.dynamics.controls = previous
+
+    def _solve(self, condition: str, V: float, h: float, gamma: float, radius: float) -> TrimResult:
+        m = self.dynamics.model
+        a_lo, a_hi = np.radians(self.dynamics.aero_db.alpha_range)
+        a_hi = min(a_hi, np.radians(m.stall_alpha))
+        el = (-m.elevator_max, m.elevator_max)
+        if condition == "steady_level_flight":
+            gamma = 0.0
+        if condition in ("steady_level_flight", "steady_climb"):
+            def cost(g):
+                return self.residual(self._state(V, h, g[0], theta=g[0] + gamma), ControlInput(elevator=g[1], throttle=g[2]))
+            res = self._minimize(cost, [0.05, 0.0, 0.5], [(a_lo, a_hi), el, (0.0, 1.0)])
+            a, de, thr = res.x
+            return TrimResult(condition, self._state(V, h, a, theta=a + gamma), ControlInput(elevator=de, throttle=thr), res.fun)
+        if condition == "glide":
+            def cost(g):
+                return self.residual(self._state(V, h, g[0], theta=g[2]), ControlInput(elevator=g[1]))
+            res = self._minimize(cost, [0.05, 0.0, -0.05], [(a_lo, a_hi), el, (-0.6, 0.6)])
+            a, de, th = res.x
+            return TrimResult(condition, self._state(V, h, a, theta=th), ControlInput(elevator=de), res.fun)
+        if condition == "coordinated_turn":
+            if radius <= 0:
+                raise ValueError("Turn radius must be positive for a coordinated turn")
+            psi_dot = V / radius
+
+            def cost(g):
+                a, phi, de, da, dr, thr = g
+                theta = np.arctan(np.tan(a) * np.cos(phi))
+                return self.residual(self._state(V, h, a, phi, theta, psi_dot), ControlInput(de, da, dr, thr))
+            phi0 = np.arctan(V**2 / (self.dynamics.env.gravity * radius))
+            res = self._minimize(cost, [0.05, phi0, 0.0, 0.0, 0.0, 0.5],
+                                 [(a_lo, a_hi), (-1.05, 1.05), el, (-m.aileron_max, m.aileron_max),
+                                  (-m.rudder_max, m.rudder_max), (0.0, 1.0)])
+            a, phi, de, da, dr, thr = res.x
+            theta = np.arctan(np.tan(a) * np.cos(phi))
+            return TrimResult(condition, self._state(V, h, a, phi, theta, psi_dot), ControlInput(de, da, dr, thr), res.fun)
+        raise ValueError(f"Unknown trim condition '{condition}'")
 
     @staticmethod
     def _minimize(cost, guess, bounds):

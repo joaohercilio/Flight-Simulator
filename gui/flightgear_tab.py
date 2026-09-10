@@ -180,7 +180,7 @@ class FlightGearTab(QtWidgets.QScrollArea):
         self.console.clear()
         self.console.log(f"Case saved. Starting bridge for {session.case_dir} ...")
         self.process.setWorkingDirectory(str(ROOT))
-        self.process.start(sys.executable, ["-u", "main.py", "flightgear", str(session.case_dir)])
+        self.process.start(sys.executable, ["-u", "main.py", "flightgear", str(session.case_dir.resolve())])
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
 

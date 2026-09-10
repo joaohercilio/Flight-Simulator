@@ -11,8 +11,8 @@ from gui.widgets import ManeuverTable
 
 COLUMNS = [
     {"simulation": "Time", "trim": "Trim (initial condition solved for steady flight)",
-     "initial_condition": "Initial condition (used when trim is disabled)"},
-    {"environment": "Environment", "control": "Baseline controls (used when trim is disabled)",
+     "initial_condition": "Initial condition (trim disabled, or FlightGear 'initial' start)"},
+    {"environment": "Environment", "control": "Baseline controls (trim disabled, or FlightGear ground start)",
      "wind": "Wind and gusts"},
 ]
 
@@ -32,8 +32,6 @@ class SimulationTab(QtWidgets.QScrollArea):
     def _trim_toggled(self, enabled: bool) -> None:
         for name in ("trim_condition", "trim_airspeed", "trim_altitude", "trim_gamma", "trim_radius"):
             self.form.widgets[name].setEnabled(enabled)
-        self.form.groups["initial_condition"].setEnabled(not enabled)
-        self.form.groups["control"].setEnabled(not enabled)
 
     def load(self, case: SimCase, case_dir: pathlib.Path) -> None:
         self.form.set_base_dir(case_dir)

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import dataclasses
 import pathlib
 import shutil
 import sys
 
 from PySide6 import QtWidgets
 
-from flightsim.aircraft import AircraftModel
-from flightsim.case import SimCase
 from flightsim.session import CASE_FILE, Session
 from gui.aircraft_tab import AircraftTab
 from gui.analysis_tab import AnalysisTab
@@ -61,8 +60,14 @@ class MainWindow(QtWidgets.QMainWindow):
         new_button.clicked.connect(self.new_case)
         self.save_button.clicked.connect(lambda: self.get_session(True))
         self.case_combo.activated.connect(self._combo_selected)
+        for form in (self.aircraft_tab.form, self.simulation_tab.form, self.flightgear_tab.form):
+            form.changed.connect(lambda: self.set_dirty(True))
         self.refresh_cases()
         self.load_forms()
+
+    def set_dirty(self, dirty: bool) -> None:
+        self.dirty = dirty
+        self.setWindowTitle(f"Flight Simulator — {self.session.case.name}" + (" *" if dirty else ""))
 
     def refresh_cases(self) -> None:
         self.case_combo.blockSignals(True)
@@ -84,7 +89,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.simulation_tab.load(self.session.case, d)
         self.flightgear_tab.load(self.session.case, d)
         self.path_label.setText(str(d.resolve()))
-        self.setWindowTitle(f"Flight Simulator — {self.session.case.name}")
+        self.set_dirty(False)
 
     def get_session(self, save: bool = False) -> Session:
         s = self.session
@@ -94,10 +99,23 @@ class MainWindow(QtWidgets.QMainWindow):
             s.case.save(s.case_dir / CASE_FILE)
             s.aircraft.save(s.case.aircraft_path(s.case_dir))
             self.statusBar().showMessage(f"Saved {s.case_dir / CASE_FILE} and {s.case.aircraft}", 4000)
-            self.setWindowTitle(f"Flight Simulator — {s.case.name}")
+            self.set_dirty(False)
         return s
 
+    def confirm_discard(self) -> bool:
+        if not self.dirty:
+            return True
+        answer = QtWidgets.QMessageBox.question(
+            self, "Unsaved changes", "Save the current case before continuing?",
+            QtWidgets.QMessageBox.Save | QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel)
+        if answer == QtWidgets.QMessageBox.Save:
+            self.get_session(True)
+        return answer != QtWidgets.QMessageBox.Cancel
+
     def load_case(self, case_dir: pathlib.Path) -> None:
+        if not self.confirm_discard():
+            self.refresh_cases()
+            return
         try:
             self.session = Session(case_dir)
         except Exception as exc:
@@ -124,12 +142,16 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         s = self.get_session(False)
         shutil.copytree(s.case_dir, target, ignore=shutil.ignore_patterns("results", "__pycache__"))
-        case = SimCase(**{**s.case.__dict__, "name": name.strip()})
+        case = dataclasses.replace(s.case, name=name.strip())
         case.save(target / CASE_FILE)
-        AircraftModel(**s.aircraft.__dict__).save(case.aircraft_path(target))
+        s.aircraft.save(case.aircraft_path(target))
+        self.set_dirty(False)
         self.load_case(target)
 
     def closeEvent(self, event) -> None:
+        if not self.confirm_discard():
+            event.ignore()
+            return
         self.flightgear_tab.closing()
         super().closeEvent(event)
 

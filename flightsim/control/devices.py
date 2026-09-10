@@ -115,6 +115,7 @@ class KeyboardControl(ControlSource):
         self._axes = [0.0, 0.0, 0.0, 0.5, 0.0]
         self._trim = 0.0
         self._clock = self._pg.time.get_ticks()
+        self._drawn = 0
         self._command = ControlInput()
 
     def poll(self) -> None:
@@ -147,7 +148,9 @@ class KeyboardControl(ControlSource):
         self._axes = [ele, ail, rud, thr, brk]
         e_max, a_max, r_max = self._limits
         self._command = ControlInput(e_max * min(max(ele + self._trim, -1.0), 1.0), a_max * ail, r_max * rud, thr, brk)
-        self._draw()
+        if now - self._drawn > 50:
+            self._drawn = now
+            self._draw()
 
     def _draw(self) -> None:
         pg = self._pg

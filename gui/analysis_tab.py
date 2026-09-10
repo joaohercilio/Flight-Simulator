@@ -28,6 +28,8 @@ class AnalysisTab(QtWidgets.QWidget):
 
         self.run_button = QtWidgets.QPushButton("▶  Run simulation")
         self.run_button.setStyleSheet("font-weight: bold; padding: 8px")
+        self.run_button.setShortcut("Ctrl+R")
+        self.run_button.setToolTip("Ctrl+R")
         self.progress = QtWidgets.QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setTextVisible(False)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import dataclasses
 
 import numpy as np
@@ -76,6 +77,14 @@ class Environment:
     @property
     def ground_z(self) -> float:
         return -self.ground_elevation
+
+    @contextlib.contextmanager
+    def still_air(self):
+        wind, self.wind = self.wind, Wind()
+        try:
+            yield
+        finally:
+            self.wind = wind
 
     @classmethod
     def from_case(cls, case) -> Environment:

@@ -46,6 +46,7 @@ class ManeuverTable(QtWidgets.QWidget):
         self.table = QtWidgets.QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(["Surface", "Start [s]", "End [s]", "Deflection [deg / -]"])
         self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.table.setMinimumHeight(160)
         add = QtWidgets.QPushButton("Add")
         remove = QtWidgets.QPushButton("Remove")
         add.clicked.connect(lambda: self.add_row())

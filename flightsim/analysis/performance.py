@@ -44,24 +44,24 @@ def climb_trim(dynamics: Dynamics, V: float, h: float, throttle: float):
 def ceiling_sweep(dynamics: Dynamics, V: float, throttle: float, h_max: float = 6000.0, step: float = 25.0,
                   log: Callable[[str], None] | None = None) -> CeilingResult:
     m = dynamics.model
-    gear, dynamics.gear = dynamics.gear, None
+    log = log or (lambda _: None)
     best = CeilingResult(0.0, 0.0, 0.0, 0.0, [])
     table: list[tuple[float, float]] = []
+    gear, dynamics.gear = dynamics.gear, None
     try:
-        for h in np.arange(0.0, h_max + step, step):
-            sol = climb_trim(dynamics, V, h, throttle)
-            if sol is None or abs(sol[1]) > m.elevator_max or sol[0] > np.radians(m.stall_alpha):
-                if log:
+        with dynamics.env.still_air():
+            for h in np.arange(0.0, h_max + step, step):
+                sol = climb_trim(dynamics, V, h, throttle)
+                if sol is None or abs(sol[1]) > m.elevator_max or sol[0] > np.radians(m.stall_alpha):
                     log(f"  [{h:7.1f} m] limits exceeded, stopping sweep")
-                break
-            alpha, el, gamma = sol
-            climb = V * np.sin(gamma)
-            table.append((float(h), float(climb)))
-            if log:
+                    break
+                alpha, el, gamma = sol
+                climb = V * np.sin(gamma)
+                table.append((float(h), float(climb)))
                 log(f"  [{h:7.1f} m] climb rate {climb:+.3f} m/s")
-            best = CeilingResult(float(h), float(np.degrees(alpha)), float(el), float(np.degrees(gamma)), table)
-            if climb <= 0.0:
-                break
+                best = CeilingResult(float(h), float(np.degrees(alpha)), float(el), float(np.degrees(gamma)), table)
+                if climb <= 0.0:
+                    break
     finally:
         dynamics.gear = gear
     return best
