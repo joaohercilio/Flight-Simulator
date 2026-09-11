@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import os
+import time
 
 from flightsim.control.source import ControlInput, ControlSource
 
@@ -119,15 +120,15 @@ class KeyboardControl(ControlSource):
         self._rate = rate
         self._axes = [0.0, 0.0, 0.0, 0.5, 0.0]
         self._trim = 0.0
-        self._clock = self._pg.time.get_ticks()
-        self._drawn = 0
+        self._clock = time.monotonic()
+        self._drawn = 0.0
         self._command = ControlInput()
 
     def poll(self) -> None:
         pg = self._pg
         pg.event.pump()
-        now = pg.time.get_ticks()
-        step = self._rate * (now - self._clock) / 1000.0
+        now = time.monotonic()
+        step = self._rate * (now - self._clock)
         self._clock = now
         k = pg.key.get_pressed()
         ele, ail, rud, thr, brk = self._axes
@@ -152,7 +153,7 @@ class KeyboardControl(ControlSource):
             ele = ail = rud = self._trim = 0.0
         self._axes = [ele, ail, rud, thr, brk]
         self._command = stick_to_surfaces(min(max(ele + self._trim, -1.0), 1.0), ail, rud, thr, brk, self._limits)
-        if now - self._drawn > 50:
+        if now - self._drawn > 0.05:
             self._drawn = now
             self._draw()
 

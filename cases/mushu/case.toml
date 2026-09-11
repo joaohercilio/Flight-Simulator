@@ -60,7 +60,6 @@ brake = 0.0
 
 [flightgear]
 host = "localhost"
-
 port = 5502
 packet_hz = 60
 fdm_hz = 240
