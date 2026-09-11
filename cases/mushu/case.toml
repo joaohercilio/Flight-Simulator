@@ -60,8 +60,8 @@ brake = 0.0
 
 [flightgear]
 host = "localhost"
-port_in = 5501
-port_out = 5502
+
+port = 5502
 packet_hz = 60
 fdm_hz = 240
 start_mode = "trimmed"
@@ -71,7 +71,7 @@ longitude = -45.8615
 heading = 0.0
 aircraft = "c172p"
 executable = "fgfs"
-extra_args = "--timeofday=noon --disable-ai-traffic"
+extra_args = "--timeofday=noon --disable-ai-traffic --enable-terrasync"
 
 [joystick]
 index = 0

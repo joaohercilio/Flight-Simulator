@@ -45,7 +45,7 @@ Both files are edited from the GUI (Aircraft / Simulation / FlightGear tabs); *N
 
 1. Configure and save the case (FlightGear tab).
 2. Launch FlightGear with the generated command (`--fdm=external --native-fdm=socket,...`).
-3. Start the bridge. The model integrates at `fdm_hz`, paced by FlightGear packets at `packet_hz`, and streams position/attitude/control surfaces back.
+3. Start the bridge. The model integrates at `fdm_hz` in real time (wall-clock paced, independent of FlightGear's frame rate) and streams position/attitude/control surfaces to FlightGear's native-FDM UDP port at `packet_hz`. The bridge can be stopped and restarted without restarting FlightGear.
 
 Keyboard input opens a small window that must stay focused: Up/Down = nose up/down, Left/Right = roll, A/D = yaw, W/S = throttle, Q/E = pitch trim, B = brake, Space = center.
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import shlex
 import signal
+import socket
+import struct
 import subprocess
 import time
 from typing import Callable
@@ -27,9 +29,7 @@ def fgfs_command(case: SimCase) -> list[str]:
     fg = case
     altitude = {"trimmed": case.trim_altitude, "initial": case.altitude}.get(fg.fg_start_mode, case.ground_elevation)
     heading = case.psi if fg.fg_start_mode == "initial" else fg.fg_heading
-    return [fg.fg_executable, "--fdm=external",
-            f"--native-fdm=socket,out,{fg.fg_packet_hz},{fg.fg_host},{fg.fg_port_in},udp",
-            f"--native-fdm=socket,in,{fg.fg_packet_hz},{fg.fg_host},{fg.fg_port_out},udp",
+    return [fg.fg_executable, "--fdm=external", f"--native-fdm=socket,in,{fg.fg_packet_hz},,{fg.fg_port},udp",
             f"--aircraft={fg.fg_aircraft}", f"--lat={fg.fg_latitude}", f"--lon={fg.fg_longitude}",
             f"--heading={heading % 360:.1f}", f"--altitude={altitude * M_TO_FT:.0f}",
             *shlex.split(fg.fg_extra_args, posix=os.name != "nt")]
@@ -63,9 +63,9 @@ class FlightGearBridge:
         self.log(f"Pilot input: {control_kind or self.case.fg_control}" + (f" ({self.controls.name})" if hasattr(self.controls, "name") else ""))
         self.sim = Simulator(self.dynamics, self.x0)
         self.dt = 1.0 / self.case.fg_fdm_hz
-        self.steps_per_packet = max(1, round(self.case.fg_fdm_hz / self.case.fg_packet_hz))
         self.lat0 = np.radians(self.case.fg_latitude)
         self.lon0 = np.radians(self.case.fg_longitude)
+        self._clock = None
         self._last_print = 0.0
 
     def _start_state(self):
@@ -90,9 +90,16 @@ class FlightGearBridge:
     def geodetic(self, x_e: float, y_e: float) -> tuple[float, float]:
         return self.lat0 + x_e / R_EARTH, self.lon0 + y_e / (R_EARTH * np.cos(self.lat0))
 
-    def callback(self, fdm, _pipe=None):
-        for _ in range(self.steps_per_packet):
+    def advance(self) -> None:
+        now = time.monotonic()
+        if self._clock is None:
+            self._t0 = now
+        elapsed = min(now - self._clock, 0.25) if self._clock is not None else 1.0 / self.case.fg_packet_hz
+        self._clock = now
+        for _ in range(max(1, round(elapsed / self.dt))):
             self.sim.step(self.dt)
+
+    def fill(self, fdm) -> None:
         x = self.sim.x
         lat, lon = self.geodetic(x[I.X_E], x[I.Y_E])
         u, v, w = x[I.U:I.W + 1]
@@ -115,41 +122,39 @@ class FlightGearBridge:
         if time.monotonic() - self._last_print > 0.5:
             self._last_print = time.monotonic()
             self.log(self.status(cmd, speed))
-        return fdm
 
     def status(self, cmd, speed) -> str:
         x = self.sim.x
-        return (f"t {self.sim.t:7.1f}s | ele {cmd.elevator:+6.1f} ail {cmd.aileron:+6.1f} rud {cmd.rudder:+6.1f} "
+        wall = time.monotonic() - self._t0
+        return (f"t {self.sim.t:7.1f}s ({self.sim.t / wall if wall > 1.0 else 1.0:.2f}x) | ele {cmd.elevator:+6.1f} ail {cmd.aileron:+6.1f} rud {cmd.rudder:+6.1f} "
                 f"thr {cmd.throttle:4.2f} | agl {-x[I.Z_E] - self.case.ground_elevation:7.1f} m | V {speed:5.1f} m/s | "
                 f"alpha {np.degrees(np.arctan2(x[I.W], x[I.U])):+5.1f}° theta {np.degrees(x[I.THETA]):+5.1f}° "
                 f"phi {np.degrees(x[I.PHI]):+6.1f}° psi {np.degrees(x[I.PSI]) % 360:5.1f}°"
                 + ("  [ground]" if self.dynamics.on_ground else ""))
 
     def run(self) -> None:
-        from flightgear_python.fg_if import FDMConnection
+        from flightgear_python.fg_if import fdm_struct_v24 as fdm_struct
         c = self.case
-        conn = FDMConnection(rx_timeout_s=5.0)
-        conn.connect_rx(c.fg_host, c.fg_port_in, self.callback)
-        conn.connect_tx(c.fg_host, c.fg_port_out)
-        self.log(f"Waiting for FlightGear packets on {c.fg_host}:{c.fg_port_in} (sending to :{c.fg_port_out}) ...")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        fdm = fdm_struct.parse(struct.pack(">I", 24) + bytes(fdm_struct.sizeof() - 4))
+        period = 1.0 / c.fg_packet_hz
+        self.log(f"Streaming to FlightGear at {c.fg_host}:{c.fg_port} ({c.fg_packet_hz} Hz), model at {c.fg_fdm_hz} Hz.")
         self.log("Launch FlightGear with: " + join_command(fgfs_command(c)))
 
         def stop(*_):
             raise KeyboardInterrupt
 
         signal.signal(signal.SIGTERM, stop)
+        next_send = time.monotonic()
         try:
             while True:
-                try:
-                    conn._fg_packet_roundtrip()
-                except Exception as exc:
-                    if "Timeout" in str(exc):
-                        self.log("No packets from FlightGear yet, still waiting ...")
-                        continue
-                    raise
+                self.advance()
+                self.fill(fdm)
+                sock.sendto(fdm_struct.build(dict(**fdm)), (c.fg_host, c.fg_port))
+                next_send += period
+                time.sleep(max(0.0, next_send - time.monotonic()))
         except KeyboardInterrupt:
             self.log("Bridge stopped.")
         finally:
             self.controls.close()
-            conn.fg_rx_sock.close()
-            conn.fg_tx_sock.close()
+            sock.close()
