@@ -15,18 +15,18 @@ pip install -r requirements.txt
 
 ## How to cite
 
-  If you use this in academic work, please cite it as:
+If you use this in academic work, please cite it as:
 
-  \`\`\`bibtex
-  @software{barboza_flightsimulator_2026,
-    author  = {Barboza, Enzo Pasa Dias and Zucchi, João Hercílio},
-    title   = {{Flight-Simulator: A 6DOF Flight Simulator with Trim, Linear-Mode and
-  Performance Analysis}},
-    year    = {2026},
-    url     = {https://github.com/joaohercilio/Flight-Simulator},
-    license = {GPL-3.0}
-  }
-  \`\`\`
+```bibtex
+@software{barboza_flightsimulator_2026,
+author  = {Barboza, Enzo Pasa Dias and Zucchi, João Hercílio},
+title   = {{Flight-Simulator: A 6DOF Flight Simulator with Trim, Linear-Mode and
+Performance Analysis}},
+year    = {2026},
+url     = {https://github.com/joaohercilio/Flight-Simulator},
+license = {GPL-3.0}
+}
+```
 
 ## License
 
