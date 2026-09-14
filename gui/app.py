@@ -26,8 +26,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.case_combo = QtWidgets.QComboBox()
         self.case_combo.setMinimumWidth(220)
-        open_button = QtWidgets.QPushButton("Open folder…")
-        new_button = QtWidgets.QPushButton("New case…")
+        self.open_button = QtWidgets.QPushButton("Open folder…")
+        self.new_button = QtWidgets.QPushButton("New case…")
         self.save_button = QtWidgets.QPushButton("Save")
         self.save_button.setShortcut("Ctrl+S")
         self.path_label = QtWidgets.QLabel()
@@ -35,8 +35,8 @@ class MainWindow(QtWidgets.QMainWindow):
         header = QtWidgets.QHBoxLayout()
         header.addWidget(QtWidgets.QLabel("<b>Case:</b>"))
         header.addWidget(self.case_combo)
-        header.addWidget(open_button)
-        header.addWidget(new_button)
+        header.addWidget(self.open_button)
+        header.addWidget(self.new_button)
         header.addWidget(self.save_button)
         header.addWidget(self.path_label, 1)
 
@@ -56,14 +56,22 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.tabs)
         self.setCentralWidget(central)
 
-        open_button.clicked.connect(self.open_folder)
-        new_button.clicked.connect(self.new_case)
+        self.open_button.clicked.connect(self.open_folder)
+        self.new_button.clicked.connect(self.new_case)
         self.save_button.clicked.connect(lambda: self.get_session(True))
         self.case_combo.activated.connect(self._combo_selected)
         for form in (self.aircraft_tab.form, self.simulation_tab.form, self.flightgear_tab.form):
             form.changed.connect(lambda: self.set_dirty(True))
+        self.analysis_tab.busy_changed.connect(self._set_busy_lock)
         self.refresh_cases()
         self.load_forms()
+
+    def _set_busy_lock(self, busy: bool) -> None:
+        # A background analysis task (run/trim/modes/ceiling) is reading self.session
+        # as it progresses; block anything that could mutate or replace it meanwhile.
+        for w in (self.case_combo, self.open_button, self.new_button, self.save_button,
+                  self.aircraft_tab, self.simulation_tab, self.flightgear_tab):
+            w.setEnabled(not busy)
 
     def set_dirty(self, dirty: bool) -> None:
         self.dirty = dirty
@@ -149,6 +157,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_case(target)
 
     def closeEvent(self, event) -> None:
+        if self.analysis_tab.is_busy():
+            QtWidgets.QMessageBox.information(
+                self, "Task running",
+                "A background analysis task (run / trim / modes / ceiling) is still running.\n"
+                "Wait for it to finish before closing.")
+            event.ignore()
+            return
         if not self.confirm_discard():
             event.ignore()
             return

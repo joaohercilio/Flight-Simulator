@@ -3,7 +3,7 @@ from __future__ import annotations
 import pathlib
 from typing import Callable
 
-from PySide6 import QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from flightsim.analysis.channels import GROUP_NAMES, build_groups
 from flightsim.analysis.export import export_csv
@@ -18,6 +18,8 @@ from gui.widgets import Console, PlotCanvas, Task
 
 
 class AnalysisTab(QtWidgets.QWidget):
+    busy_changed = QtCore.Signal(bool)
+
     def __init__(self, get_session: Callable[[], Session]) -> None:
         super().__init__()
         self.get_session = get_session
@@ -135,9 +137,13 @@ class AnalysisTab(QtWidgets.QWidget):
         self._task.failed.connect(self._failed)
         self._task.start()
 
+    def is_busy(self) -> bool:
+        return self._task is not None and self._task.isRunning()
+
     def _busy(self, busy: bool) -> None:
         for b in (self.run_button, self.trim_button, self.modes_button, self.ceiling_button):
             b.setEnabled(not busy)
+        self.busy_changed.emit(busy)
 
     def _finished(self, value) -> None:
         self._busy(False)

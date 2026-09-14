@@ -16,6 +16,7 @@ COLUMNS = [
      "wind": "Wind and gusts"},
 ]
 TRIM_FIELDS = ["trim_condition", "trim_airspeed", "trim_altitude", "trim_gamma", "trim_radius"]
+INITIAL_CONDITION_FIELDS = ["x", "y", "altitude", "u", "v", "w", "phi", "theta", "psi", "p", "q", "r"]
 GUST_FIELDS = ["gust_amplitude", "gust_duration_min", "gust_duration_max", "gust_interval_min", "gust_interval_max", "gust_seed"]
 TRIM_HINTS = {
     "steady_level_flight": "Solves α, elevator and throttle for level flight at the given airspeed and altitude.",
@@ -41,6 +42,7 @@ class SimulationTab(QtWidgets.QScrollArea):
 
         f = self.form
         f.enable_when("trim_enable", TRIM_FIELDS, {True})
+        f.enable_when("trim_enable", INITIAL_CONDITION_FIELDS, {False})
         f.enable_when("trim_condition", ["trim_gamma"], {"steady_climb"})
         f.enable_when("trim_condition", ["trim_radius"], {"coordinated_turn"})
         f.enable_when("density_model", ["density"], {"constant"})
