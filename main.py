@@ -4,7 +4,7 @@ import argparse
 import pathlib
 import sys
 
-DEFAULT_CASE = pathlib.Path(__file__).resolve().parent / "cases" / "mushu"
+DEFAULT_CASE = pathlib.Path(__file__).resolve().parent / "cases" / "default_plane"
 
 
 def cmd_gui(args) -> None:
