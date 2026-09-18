@@ -1,0 +1,43 @@
+[aircraft]
+name = "mushu"
+
+[inertia]
+mass = 10.0
+Ix = 0.19455600792
+Iy = 0.42736474112
+Iz = 0.52497208636
+Ixz = 0.09489697883
+x_cg = 0.41
+y_cg = 0.0
+z_cg = 0.315
+
+[geometry]
+S = 0.7973
+b = 1.9
+c = 0.4209
+
+[control_limits]
+elevator_max = 25.0
+aileron_max = 20.0
+rudder_max = 30.0
+
+[propulsion]
+arm_z_engine = 0.0
+a = 0.000458
+b = -0.066734
+c = -0.1
+d = 34.66
+
+[landing_gear]
+main_gear_x = 0.46
+main_gear_y = 0.2
+wheelbase = 0.306
+gear_height = 0.315
+gear_stiffness = 200000.0
+damping_ratio = 1.0
+rolling_friction = 0.04
+brake_friction = 0.4
+
+[aero]
+tables_dir = "aero_tables"
+stall_alpha = 15.0
